@@ -54,15 +54,29 @@ app.post('/api/notify', async (req, res) => {
     }
   ];
 
-  // 写真があればカードに追加（50KB以下のみ。大きすぎるとPower Automateが拒否する）
-  if (photo && photo.length < 70000) {
-    cardBody.push({
-      type: "Image",
-      url: photo,
-      size: "Medium",
-      horizontalAlignment: "Center",
-      spacing: "Medium"
-    });
+  // 写真をファイルに保存してURL化（TeamsはBase64を表示できない）
+  if (photo) {
+    try {
+      const photoId = 'photo_' + Date.now() + '.png';
+      const base64Data = photo.replace(/^data:image\/\w+;base64,/, '');
+      const photoDir = path.join(__dirname, 'public', 'photos');
+      if (!fs.existsSync(photoDir)) fs.mkdirSync(photoDir, { recursive: true });
+      fs.writeFileSync(path.join(photoDir, photoId), Buffer.from(base64Data, 'base64'));
+
+      const host = req.headers.host || 'reception-app-164b.onrender.com';
+      const protocol = req.headers['x-forwarded-proto'] || 'https';
+      const photoUrl = `${protocol}://${host}/photos/${photoId}`;
+
+      cardBody.push({
+        type: "Image",
+        url: photoUrl,
+        size: "Medium",
+        horizontalAlignment: "Center",
+        spacing: "Medium"
+      });
+    } catch (e) {
+      console.error('写真保存エラー:', e.message);
+    }
   }
 
   cardBody.push({
