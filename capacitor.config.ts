@@ -1,13 +1,13 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.reception.app',
+  appId: 'com.naganuma.reception',
   appName: '受付システム',
   webDir: 'public',
   server: {
     androidScheme: 'https',
     cleartext: true,
-    // url: 'http://localhost:3000' // ローカル開発時のみ有効にする
+    url: 'https://reception-app-164b.onrender.com'
   },
   ios: {
     contentInset: 'automatic'
