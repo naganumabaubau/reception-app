@@ -18,6 +18,8 @@
       min-height: 100vh;
       padding-top: env(safe-area-inset-top);
       padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
       overflow: hidden;
     }
 
@@ -96,7 +98,7 @@
     /* ===== Common Header ===== */
     .app-header {
       background: #fff;
-      padding: calc(env(safe-area-inset-top, 0px) + 16px) 20px 16px;
+      padding: calc(env(safe-area-inset-top, 0px) + 12px) calc(env(safe-area-inset-right, 0px) + 20px) 12px calc(env(safe-area-inset-left, 0px) + 20px);
       display: flex;
       align-items: center;
       border-bottom: 1px solid #e8ecf0;
@@ -137,11 +139,11 @@
 
     .menu-greeting {
       text-align: center;
-      padding: 32px 20px 8px;
+      padding: 16px 20px 4px;
     }
 
     .menu-greeting h2 {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 700;
       color: #333;
       margin-bottom: 8px;
@@ -154,15 +156,15 @@
 
     .menu-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      padding: 24px 20px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding: 16px 40px;
     }
 
     .menu-card {
       background: #fff;
       border-radius: 16px;
-      padding: 28px 16px;
+      padding: 18px 12px;
       text-align: center;
       cursor: pointer;
       box-shadow: 0 2px 12px rgba(0,0,0,0.06);
@@ -177,33 +179,33 @@
     }
 
     .menu-card-icon {
-      width: 56px;
-      height: 56px;
+      width: 44px;
+      height: 44px;
       background: #e8f4fd;
-      border-radius: 16px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 14px;
+      margin: 0 auto 10px;
     }
 
     .menu-card-icon svg {
-      width: 28px;
-      height: 28px;
+      width: 24px;
+      height: 24px;
       fill: #009bdb;
     }
 
     .menu-card-title {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 600;
       color: #333;
       line-height: 1.4;
     }
 
     .menu-card-desc {
-      font-size: 12px;
+      font-size: 11px;
       color: #999;
-      margin-top: 6px;
+      margin-top: 4px;
     }
 
     /* ===== Form Screen ===== */
@@ -213,8 +215,12 @@
 
     .form-body {
       flex: 1;
-      padding: 24px 20px;
+      padding: 20px 40px;
       overflow-y: auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 24px;
+      align-content: start;
     }
 
     .form-group {
@@ -308,7 +314,9 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 40px 24px;
+      padding: 20px 40px;
+      flex-direction: row;
+      gap: 40px;
     }
 
     .complete-check {
@@ -664,13 +672,17 @@
 
 <!-- ===== 4. Complete Screen ===== -->
 <div id="screen-complete" class="screen complete-screen">
-  <div class="complete-check">
-    <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+  <div style="text-align:center;">
+    <div class="complete-check">
+      <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+    </div>
+    <h2 class="complete-title">受付が完了しました</h2>
+    <p class="complete-msg">担当者に通知しました。<br>少々お待ちください。</p>
   </div>
-  <h2 class="complete-title">受付が完了しました</h2>
-  <p class="complete-msg">担当者に通知しました。<br>少々お待ちください。</p>
-  <div class="complete-card" id="complete-info"></div>
-  <button class="btn-secondary" onclick="resetForm()">トップに戻る</button>
+  <div style="text-align:center;">
+    <div class="complete-card" id="complete-info"></div>
+    <button class="btn-secondary" onclick="resetForm()">トップに戻る</button>
+  </div>
 </div>
 
 <!-- ===== 5. Log Screen ===== -->
