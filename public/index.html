@@ -1190,11 +1190,18 @@
   // カメラ起動
   async function startCamera(videoId) {
     const video = document.getElementById(videoId);
+    video.setAttribute('autoplay', '');
+    video.setAttribute('muted', '');
+    video.setAttribute('playsinline', '');
     cameraStream = await navigator.mediaDevices.getUserMedia({
-      video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
+      video: { width: { ideal: 480 }, height: { ideal: 360 }, facingMode: 'user' }
     });
     video.srcObject = cameraStream;
-    return new Promise(resolve => { video.onloadedmetadata = () => resolve(video); });
+    return new Promise(resolve => {
+      video.onloadedmetadata = () => {
+        video.play().then(() => resolve(video)).catch(() => resolve(video));
+      };
+    });
   }
 
   // カメラ停止
@@ -1245,10 +1252,22 @@
     faceDetectInterval = setInterval(async () => {
       if (matchFound) return;
 
-      const detection = await faceapi
-        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.3 }))
-        .withFaceLandmarks()
-        .withFaceDescriptor();
+      // videoが再生中か確認
+      if (video.readyState < 2 || video.videoWidth === 0) {
+        document.getElementById('face-status').textContent = 'カメラ準備中...';
+        return;
+      }
+
+      let detection;
+      try {
+        detection = await faceapi
+          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.3 }))
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+      } catch (err) {
+        document.getElementById('face-status').textContent = '検出エラー: ' + err.message;
+        return;
+      }
 
       if (!detection) {
         document.getElementById('face-status').textContent = '顔を検出中...';
@@ -1360,10 +1379,15 @@
     const video = document.getElementById('register-video');
 
     faceDetectInterval = setInterval(async () => {
-      const detection = await faceapi
-        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.3 }))
-        .withFaceLandmarks()
-        .withFaceDescriptor();
+      if (video.readyState < 2 || video.videoWidth === 0) return;
+
+      let detection;
+      try {
+        detection = await faceapi
+          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.3 }))
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+      } catch (err) { return; }
 
       if (detection) {
         registerDescriptor = Array.from(detection.descriptor);
