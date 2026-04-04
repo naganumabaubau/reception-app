@@ -626,26 +626,7 @@
           <button class="btn-save" onclick="saveSettings()">保存する</button>
         </div>
         <div class="settings-card">
-          <h3>通知設定</h3>
-          <div class="setting-row">
-            <span class="setting-label">Teams Webhook URL</span>
-          </div>
-          <input type="text" class="setting-input" id="setting-webhook" style="width:100%;margin-bottom:12px" placeholder="https://...">
-          <div style="border-top:1px solid #f0f3f6;margin:12px 0;"></div>
-          <p style="font-size:13px;color:#999;margin-bottom:8px">メール通知（Gmail）</p>
-          <div class="setting-row">
-            <span class="setting-label">通知先メールアドレス</span>
-          </div>
-          <input type="email" class="setting-input" id="setting-notify-email" style="width:100%;margin-bottom:8px" placeholder="notify@example.com">
-          <div class="setting-row">
-            <span class="setting-label">送信用Gmail</span>
-          </div>
-          <input type="email" class="setting-input" id="setting-smtp-user" style="width:100%;margin-bottom:8px" placeholder="sender@gmail.com">
-          <div class="setting-row">
-            <span class="setting-label">Gmailアプリパスワード</span>
-          </div>
-          <input type="password" class="setting-input" id="setting-smtp-password" style="width:100%;margin-bottom:12px" placeholder="xxxx xxxx xxxx xxxx">
-          <div style="border-top:1px solid #f0f3f6;margin:12px 0;"></div>
+          <h3>その他</h3>
           <div class="setting-row">
             <span class="setting-label">自動リセット（秒）</span>
             <input type="number" class="setting-input" id="setting-reset" style="width:100px" value="30">
@@ -844,10 +825,6 @@
     document.getElementById('setting-welcome').value = s.welcome || 'ようこそ';
     document.getElementById('setting-sub').value = s.sub || 'ご用件をお選びください';
     document.getElementById('setting-complete').value = s.complete || '担当者に通知しました。少々お待ちください。';
-    document.getElementById('setting-webhook').value = s.webhook || '';
-    document.getElementById('setting-notify-email').value = s.notifyEmail || '';
-    document.getElementById('setting-smtp-user').value = s.smtpUser || '';
-    document.getElementById('setting-smtp-password').value = s.smtpPassword || '';
     document.getElementById('setting-reset').value = s.resetTime || 30;
 
     // Menu buttons
@@ -870,10 +847,6 @@
       welcome: document.getElementById('setting-welcome').value,
       sub: document.getElementById('setting-sub').value,
       complete: document.getElementById('setting-complete').value,
-      webhook: document.getElementById('setting-webhook').value,
-      notifyEmail: document.getElementById('setting-notify-email').value,
-      smtpUser: document.getElementById('setting-smtp-user').value,
-      smtpPassword: document.getElementById('setting-smtp-password').value,
       resetTime: parseInt(document.getElementById('setting-reset').value) || 30,
       menus: {
         noappointment: document.getElementById('menu-noappointment').checked,

@@ -1,5 +1,4 @@
 const express = require('express');
-const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -8,7 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ===== Teams Webhook URL =====
-const TEAMS_WEBHOOK_URL = process.env.TEAMS_WEBHOOK_URL || 'https://default1eb266c90d084b36af053d1d9a4f68.57.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8fdbb30e0416443b9e341b9df8df59e9/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=RL858b5WAEgabi0UQeKd9IZCZaFz1bbiCNv-P43gj50';
+const TEAMS_WEBHOOK_URL = 'https://default1eb266c90d084b36af053d1d9a4f68.57.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/9cb3e48558b740dd8e869e7a53aaedcb/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=EmsfZkcfGIF7xcI3XkdSWqE7H1THfr99ibMTuvdL1Y8';
 
 // 設定データ（ファイルに永続化）
 const SETTINGS_FILE = path.join(__dirname, 'data_settings.json');
@@ -94,9 +93,7 @@ app.post('/api/notify', async (req, res) => {
   };
 
   try {
-    // 管理画面の設定を優先、なければデフォルト
-    const webhookUrl = receptionSettings.webhook || TEAMS_WEBHOOK_URL;
-    const response = await fetch(webhookUrl, {
+    const response = await fetch(TEAMS_WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(card)
@@ -110,59 +107,6 @@ app.post('/api/notify', async (req, res) => {
     }
   } catch (err) {
     console.error('❌ Teams通知エラー:', err.message);
-  }
-
-  // メール通知（画像添付対応）
-  const emailTo = receptionSettings.notifyEmail;
-  const emailFrom = receptionSettings.smtpUser;
-  const emailPass = receptionSettings.smtpPassword;
-
-  if (emailTo && emailFrom && emailPass) {
-    try {
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: { user: emailFrom, pass: emailPass }
-      });
-
-      const mailOptions = {
-        from: `受付システム <${emailFrom}>`,
-        to: emailTo,
-        subject: `【来客通知】${name} 様がお見えです`,
-        html: `
-          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;">
-            <div style="background:#009bdb;color:#fff;padding:14px 20px;border-radius:8px 8px 0 0;">
-              <h2 style="margin:0;font-size:16px;">来客のお知らせ</h2>
-            </div>
-            <div style="background:#fff;padding:16px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 8px 8px;">
-              ${photo ? '<img src="cid:visitor-photo" style="width:100%;max-width:300px;border-radius:8px;margin-bottom:12px;" />' : ''}
-              <table style="width:100%;border-collapse:collapse;">
-                <tr><td style="padding:6px 0;color:#888;width:80px;">お名前</td><td style="padding:6px 0;font-weight:bold;">${name} 様</td></tr>
-                <tr><td style="padding:6px 0;color:#888;">会社名</td><td style="padding:6px 0;">${company}</td></tr>
-                <tr><td style="padding:6px 0;color:#888;">訪問先</td><td style="padding:6px 0;">${target}</td></tr>
-                <tr><td style="padding:6px 0;color:#888;">ご用件</td><td style="padding:6px 0;">${purpose}</td></tr>
-                <tr><td style="padding:6px 0;color:#888;">人数</td><td style="padding:6px 0;">${count}名</td></tr>
-                <tr><td style="padding:6px 0;color:#888;">受付時刻</td><td style="padding:6px 0;">${time}</td></tr>
-              </table>
-            </div>
-          </div>`,
-        attachments: []
-      };
-
-      // 写真をBase64からバッファに変換して添付
-      if (photo) {
-        const base64Data = photo.replace(/^data:image\/\w+;base64,/, '');
-        mailOptions.attachments.push({
-          filename: `visitor_${Date.now()}.jpg`,
-          content: Buffer.from(base64Data, 'base64'),
-          cid: 'visitor-photo'
-        });
-      }
-
-      await transporter.sendMail(mailOptions);
-      console.log(`✉ メール送信完了: ${emailTo}${photo ? ' (写真付き)' : ''}`);
-    } catch (err) {
-      console.error('✉ メール送信エラー:', err.message);
-    }
   }
 
   res.json({ success: true });
