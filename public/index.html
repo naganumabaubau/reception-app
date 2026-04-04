@@ -552,6 +552,162 @@
 
     .nav-item.active svg { fill: #009bdb; }
     .nav-item.active span { color: #009bdb; }
+
+    /* ===== Face Auth Screen ===== */
+    .face-screen {
+      background: #f0f4f8;
+    }
+
+    .face-body {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      padding: 16px 40px;
+    }
+
+    .camera-wrap {
+      position: relative;
+      width: 320px;
+      height: 240px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #000;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      flex-shrink: 0;
+    }
+
+    .camera-wrap video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .camera-wrap canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .camera-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      border: 3px solid rgba(0,155,219,0.5);
+      border-radius: 16px;
+      pointer-events: none;
+    }
+
+    .face-info {
+      text-align: center;
+      max-width: 280px;
+    }
+
+    .face-info h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .face-info p {
+      font-size: 14px;
+      color: #888;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .face-status {
+      font-size: 15px;
+      font-weight: 600;
+      color: #009bdb;
+      margin-bottom: 16px;
+      min-height: 24px;
+    }
+
+    .face-match-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      text-align: left;
+      margin-bottom: 16px;
+    }
+
+    .face-match-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: #333;
+    }
+
+    .face-match-company {
+      font-size: 14px;
+      color: #009bdb;
+      margin-top: 4px;
+    }
+
+    /* ===== Consent Screen ===== */
+    .consent-screen {
+      background: #f0f4f8;
+    }
+
+    .consent-body {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 40px;
+    }
+
+    .consent-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 560px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      text-align: center;
+    }
+
+    .consent-card h3 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 16px;
+    }
+
+    .consent-card p {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.8;
+      text-align: left;
+      margin-bottom: 20px;
+    }
+
+    .consent-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .consent-buttons .btn-primary {
+      width: auto;
+      padding: 14px 40px;
+    }
+
+    .consent-buttons .btn-secondary {
+      padding: 14px 40px;
+    }
+
+    .scanning-anim {
+      animation: scanning 1.5s ease-in-out infinite;
+    }
+
+    @keyframes scanning {
+      0%, 100% { border-color: rgba(0,155,219,0.3); }
+      50% { border-color: rgba(0,155,219,0.9); }
+    }
   </style>
 </head>
 <body>
@@ -606,6 +762,13 @@
       </div>
       <div class="menu-card-title">その他</div>
       <div class="menu-card-desc">配達・届け物など</div>
+    </div>
+    <div class="menu-card" id="card-face" onclick="startFaceAuth()" style="border:2px solid #009bdb;">
+      <div class="menu-card-icon" style="background:#009bdb;">
+        <svg viewBox="0 0 24 24" style="fill:#fff;"><path d="M9 11.75c-.69 0-1.25.56-1.25 1.25s.56 1.25 1.25 1.25 1.25-.56 1.25-1.25-.56-1.25-1.25-1.25zm6 0c-.69 0-1.25.56-1.25 1.25s.56 1.25 1.25 1.25 1.25-.56 1.25-1.25-.56-1.25-1.25-1.25zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-.29.02-.58.05-.86 2.36-1.05 4.23-2.98 5.21-5.37C11.07 8.33 14.05 10 17.42 10c.78 0 1.53-.09 2.25-.26.21.71.33 1.47.33 2.26 0 4.41-3.59 8-8 8z"/></svg>
+      </div>
+      <div class="menu-card-title">顔認証で受付</div>
+      <div class="menu-card-desc">2回目以降の方</div>
     </div>
   </div>
   <div style="flex:1"></div>
@@ -670,6 +833,90 @@
   </form>
 </div>
 
+<!-- ===== 3b. Consent Screen ===== -->
+<div id="screen-consent" class="screen consent-screen">
+  <div class="app-header">
+    <button class="back-btn" onclick="goTo('menu')">
+      <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+    </button>
+    <div class="header-title">顔認証について</div>
+  </div>
+  <div class="consent-body">
+    <div class="consent-card">
+      <h3>顔認証のご利用について</h3>
+      <p>
+        本システムでは、受付を迅速に行うために顔認証技術を使用しています。<br><br>
+        ・撮影した顔データは本端末内にのみ保存され、外部に送信されることはありません。<br>
+        ・顔データは受付の本人確認のみに使用されます。<br>
+        ・登録データはいつでも削除を依頼できます。<br><br>
+        同意いただける場合は「同意して進む」をタップしてください。
+      </p>
+      <div class="consent-buttons">
+        <button class="btn-secondary" onclick="goTo('menu')">戻る</button>
+        <button class="btn-primary" onclick="onConsent()">同意して進む</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 3c. Face Auth Screen ===== -->
+<div id="screen-face" class="screen face-screen">
+  <div class="app-header">
+    <button class="back-btn" onclick="stopCamera(); goTo('menu')">
+      <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+    </button>
+    <div class="header-title">顔認証受付</div>
+  </div>
+  <div class="face-body">
+    <div class="camera-wrap">
+      <video id="face-video" autoplay muted playsinline></video>
+      <canvas id="face-canvas"></canvas>
+      <div class="camera-overlay scanning-anim" id="camera-overlay"></div>
+    </div>
+    <div class="face-info">
+      <h3 id="face-title">カメラに顔を向けてください</h3>
+      <p id="face-desc">登録済みの方は自動で認識されます</p>
+      <div class="face-status" id="face-status">認識中...</div>
+      <div id="face-match-result" style="display:none;">
+        <div class="face-match-card">
+          <div class="face-match-name" id="match-name"></div>
+          <div class="face-match-company" id="match-company"></div>
+        </div>
+        <button class="btn-primary" style="width:auto;padding:14px 40px;" onclick="faceCheckin()">この内容で受付する</button>
+      </div>
+      <div id="face-no-match" style="display:none;margin-top:12px;">
+        <p style="color:#e65100;font-weight:600;margin-bottom:12px;">顔が登録されていません</p>
+        <button class="btn-primary" style="width:auto;padding:14px 40px;" onclick="stopCamera(); goTo('form')">手動で受付する</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 3d. Face Register Screen ===== -->
+<div id="screen-face-register" class="screen face-screen">
+  <div class="app-header">
+    <button class="back-btn" onclick="stopCamera(); goTo('menu')">
+      <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+    </button>
+    <div class="header-title">顔の登録</div>
+  </div>
+  <div class="face-body">
+    <div class="camera-wrap">
+      <video id="register-video" autoplay muted playsinline></video>
+      <canvas id="register-canvas"></canvas>
+      <div class="camera-overlay" id="register-overlay"></div>
+    </div>
+    <div class="face-info">
+      <h3>顔を登録しますか？</h3>
+      <p>次回から顔認証で受付できます</p>
+      <div class="face-status" id="register-status">カメラに顔を向けてください</div>
+      <button class="btn-primary" id="btn-register-face" style="width:auto;padding:14px 40px;" onclick="registerFace()" disabled>顔を登録する</button>
+      <br>
+      <button class="btn-secondary" style="margin-top:12px;padding:10px 24px;font-size:13px;" onclick="skipRegister()">スキップ</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== 4. Complete Screen ===== -->
 <div id="screen-complete" class="screen complete-screen">
   <div style="text-align:center;">
@@ -681,6 +928,8 @@
   </div>
   <div style="text-align:center;">
     <div class="complete-card" id="complete-info"></div>
+    <button class="btn-primary" id="btn-offer-register" style="width:auto;padding:14px 32px;margin-bottom:12px;display:none;" onclick="offerFaceRegister(completedVisitor)">顔を登録して次回から簡単受付</button>
+    <br>
     <button class="btn-secondary" onclick="resetForm()">トップに戻る</button>
   </div>
 </div>
@@ -706,6 +955,7 @@
   </div>
 </div>
 
+<script src="face-api.min.js"></script>
 <script src="config.js"></script>
 <script>
   // --- Data ---
@@ -825,7 +1075,10 @@
     return false;
   }
 
+  let completedVisitor = null;
+
   function showComplete(visitor) {
+    completedVisitor = visitor;
     const info = document.getElementById('complete-info');
     info.innerHTML = `
       <div class="complete-card-row"><span class="complete-card-label">お名前</span><span class="complete-card-value">${escapeHtml(visitor.name)} 様</span></div>
@@ -835,6 +1088,13 @@
       <div class="complete-card-row"><span class="complete-card-label">人数</span><span class="complete-card-value">${visitor.count}名</span></div>
       <div class="complete-card-row"><span class="complete-card-label">受付時刻</span><span class="complete-card-value">${formatTime(visitor.checkinTime)}</span></div>
     `;
+
+    // 顔未登録の場合のみ登録ボタンを表示
+    const faceDB = getFaceDB();
+    const alreadyRegistered = faceDB.some(e => e.name === visitor.name);
+    const registerBtn = document.getElementById('btn-offer-register');
+    registerBtn.style.display = alreadyRegistered ? 'none' : 'inline-block';
+
     goTo('complete');
   }
 
@@ -927,6 +1187,273 @@
 
   // --- Init: load settings ---
   loadReceptionSettings();
+
+  // ===== Face Recognition =====
+  let faceModelsLoaded = false;
+  let cameraStream = null;
+  let faceDetectInterval = null;
+  let lastCheckinVisitor = null;
+
+  // 顔データストレージ
+  function getFaceDB() {
+    return JSON.parse(localStorage.getItem('face_db') || '[]');
+  }
+
+  function saveFaceDB(db) {
+    localStorage.setItem('face_db', JSON.stringify(db));
+  }
+
+  // モデル読み込み
+  async function loadFaceModels() {
+    if (faceModelsLoaded) return;
+    const API_BASE = window.API_BASE || '';
+    const modelPath = API_BASE + '/models';
+    await faceapi.nets.tinyFaceDetector.loadFromUri(modelPath);
+    await faceapi.nets.faceLandmark68Net.loadFromUri(modelPath);
+    await faceapi.nets.faceRecognitionNet.loadFromUri(modelPath);
+    faceModelsLoaded = true;
+  }
+
+  // カメラ起動
+  async function startCamera(videoId) {
+    const video = document.getElementById(videoId);
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 320, height: 240, facingMode: 'user' }
+    });
+    video.srcObject = cameraStream;
+    return new Promise(resolve => { video.onloadedmetadata = () => resolve(video); });
+  }
+
+  // カメラ停止
+  function stopCamera() {
+    if (faceDetectInterval) { clearInterval(faceDetectInterval); faceDetectInterval = null; }
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(t => t.stop());
+      cameraStream = null;
+    }
+  }
+
+  // 同意画面
+  function startFaceAuth() {
+    const consented = localStorage.getItem('face_consent');
+    if (consented) {
+      onConsent();
+    } else {
+      goTo('consent');
+    }
+  }
+
+  // 同意後
+  async function onConsent() {
+    localStorage.setItem('face_consent', 'true');
+    goTo('face');
+
+    document.getElementById('face-match-result').style.display = 'none';
+    document.getElementById('face-no-match').style.display = 'none';
+    document.getElementById('face-status').textContent = 'モデルを読み込み中...';
+    document.getElementById('camera-overlay').classList.add('scanning-anim');
+
+    try {
+      await loadFaceModels();
+      await startCamera('face-video');
+      document.getElementById('face-status').textContent = '認識中...';
+      startFaceDetection();
+    } catch (err) {
+      document.getElementById('face-status').textContent = 'カメラを起動できません';
+      console.error(err);
+    }
+  }
+
+  // 顔検出ループ
+  function startFaceDetection() {
+    const video = document.getElementById('face-video');
+    let matchFound = false;
+
+    faceDetectInterval = setInterval(async () => {
+      if (matchFound) return;
+
+      const detection = await faceapi
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+      if (!detection) {
+        document.getElementById('face-status').textContent = '顔を検出中...';
+        return;
+      }
+
+      document.getElementById('face-status').textContent = '照合中...';
+
+      const faceDB = getFaceDB();
+      if (faceDB.length === 0) {
+        matchFound = true;
+        document.getElementById('face-status').textContent = '';
+        document.getElementById('face-no-match').style.display = 'block';
+        return;
+      }
+
+      // 登録済み顔と照合
+      const labeledDescriptors = faceDB.map(entry =>
+        new faceapi.LabeledFaceDescriptors(entry.name, [new Float32Array(entry.descriptor)])
+      );
+      const matcher = new faceapi.FaceMatcher(labeledDescriptors, 0.5);
+      const match = matcher.findBestMatch(detection.descriptor);
+
+      if (match.label !== 'unknown') {
+        matchFound = true;
+        clearInterval(faceDetectInterval);
+        document.getElementById('camera-overlay').classList.remove('scanning-anim');
+        document.getElementById('camera-overlay').style.borderColor = '#4caf50';
+
+        const entry = faceDB.find(e => e.name === match.label);
+        document.getElementById('match-name').textContent = entry.name + ' 様';
+        document.getElementById('match-company').textContent = entry.company || '—';
+        document.getElementById('face-status').textContent = '認証成功！';
+        document.getElementById('face-match-result').style.display = 'block';
+
+        lastCheckinVisitor = {
+          id: Date.now(),
+          name: entry.name,
+          company: entry.company || '—',
+          target: entry.target || '—',
+          purpose: '打ち合わせ',
+          count: '1',
+          checkinTime: new Date().toISOString(),
+          checkoutTime: null,
+          status: 'waiting'
+        };
+      } else {
+        document.getElementById('face-status').textContent = '照合中...（一致なし）';
+        // 5秒間マッチしなかったら未登録と判断
+        setTimeout(() => {
+          if (!matchFound) {
+            matchFound = true;
+            document.getElementById('face-status').textContent = '';
+            document.getElementById('face-no-match').style.display = 'block';
+          }
+        }, 5000);
+      }
+    }, 1000);
+  }
+
+  // 顔認証でチェックイン
+  function faceCheckin() {
+    if (!lastCheckinVisitor) return;
+    stopCamera();
+
+    const visitors = getVisitors();
+    visitors.unshift(lastCheckinVisitor);
+    saveVisitors(visitors);
+
+    showComplete(lastCheckinVisitor);
+
+    const API_BASE = window.API_BASE || '';
+    fetch(API_BASE + '/api/visitors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(lastCheckinVisitor)
+    }).catch(err => console.error('データ保存エラー:', err));
+
+    fetch(API_BASE + '/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(lastCheckinVisitor)
+    }).catch(err => console.error('通知エラー:', err));
+
+    lastCheckinVisitor = null;
+  }
+
+  // === 顔登録 ===
+  let registerDescriptor = null;
+
+  // 通常チェックイン完了後に顔登録を提案
+  async function offerFaceRegister(visitor) {
+    lastCheckinVisitor = visitor;
+    goTo('face-register');
+    document.getElementById('register-status').textContent = 'モデルを読み込み中...';
+    document.getElementById('btn-register-face').disabled = true;
+
+    try {
+      await loadFaceModels();
+      await startCamera('register-video');
+      document.getElementById('register-status').textContent = 'カメラに顔を向けてください';
+      startRegisterDetection();
+    } catch (err) {
+      document.getElementById('register-status').textContent = 'カメラを起動できません';
+    }
+  }
+
+  function startRegisterDetection() {
+    const video = document.getElementById('register-video');
+
+    faceDetectInterval = setInterval(async () => {
+      const detection = await faceapi
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+      if (detection) {
+        registerDescriptor = Array.from(detection.descriptor);
+        document.getElementById('register-status').textContent = '顔を検出しました！';
+        document.getElementById('register-overlay').style.borderColor = '#4caf50';
+        document.getElementById('btn-register-face').disabled = false;
+      } else {
+        document.getElementById('register-status').textContent = 'カメラに顔を向けてください';
+        document.getElementById('register-overlay').style.borderColor = '';
+        document.getElementById('btn-register-face').disabled = true;
+      }
+    }, 500);
+  }
+
+  function registerFace() {
+    if (!registerDescriptor || !lastCheckinVisitor) return;
+
+    const faceDB = getFaceDB();
+    // 同じ名前の既存エントリを更新
+    const existing = faceDB.findIndex(e => e.name === lastCheckinVisitor.name);
+    const entry = {
+      name: lastCheckinVisitor.name,
+      company: lastCheckinVisitor.company,
+      target: lastCheckinVisitor.target,
+      descriptor: registerDescriptor
+    };
+
+    if (existing >= 0) {
+      faceDB[existing] = entry;
+    } else {
+      faceDB.push(entry);
+    }
+
+    saveFaceDB(faceDB);
+    stopCamera();
+
+    // サーバーにも保存
+    const API_BASE = window.API_BASE || '';
+    fetch(API_BASE + '/api/faces', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry)
+    }).catch(() => {});
+
+    document.getElementById('register-status').textContent = '登録完了！';
+    document.getElementById('btn-register-face').disabled = true;
+
+    setTimeout(() => {
+      showComplete(lastCheckinVisitor);
+      lastCheckinVisitor = null;
+      registerDescriptor = null;
+    }, 1500);
+  }
+
+  function skipRegister() {
+    stopCamera();
+    if (lastCheckinVisitor) {
+      showComplete(lastCheckinVisitor);
+      lastCheckinVisitor = null;
+    } else {
+      goTo('menu');
+    }
+  }
 </script>
 
 </body>

@@ -124,6 +124,30 @@ app.post('/api/visitors/checkout', (req, res) => {
   }
 });
 
+// 顔データAPI
+let faceDB = [];
+
+app.get('/api/faces', (req, res) => {
+  res.json(faceDB);
+});
+
+app.post('/api/faces', (req, res) => {
+  const { name } = req.body;
+  const existing = faceDB.findIndex(e => e.name === name);
+  if (existing >= 0) {
+    faceDB[existing] = req.body;
+  } else {
+    faceDB.push(req.body);
+  }
+  console.log(`👤 顔データ登録: ${name}`);
+  res.json({ success: true });
+});
+
+app.delete('/api/faces/:name', (req, res) => {
+  faceDB = faceDB.filter(e => e.name !== req.params.name);
+  res.json({ success: true });
+});
+
 // ローカルIPを取得
 function getLocalIP() {
   const interfaces = os.networkInterfaces();
