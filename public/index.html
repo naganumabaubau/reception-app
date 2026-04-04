@@ -794,8 +794,16 @@
 
     showComplete(visitor);
 
-    // Teams通知を送信
     const API_BASE = window.API_BASE || '';
+
+    // サーバーに来客データを保存
+    fetch(API_BASE + '/api/visitors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(visitor)
+    }).catch(err => console.error('データ保存エラー:', err));
+
+    // Teams通知を送信
     fetch(API_BASE + '/api/notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

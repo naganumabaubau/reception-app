@@ -99,6 +99,31 @@ app.post('/api/settings', (req, res) => {
   res.json({ success: true });
 });
 
+// 来客データAPI（アプリ・管理画面間でデータを共有）
+let visitors = [];
+
+app.get('/api/visitors', (req, res) => {
+  res.json(visitors);
+});
+
+app.post('/api/visitors', (req, res) => {
+  visitors.unshift(req.body);
+  console.log(`📋 来客データ追加: ${req.body.name}`);
+  res.json({ success: true });
+});
+
+app.post('/api/visitors/checkout', (req, res) => {
+  const { id } = req.body;
+  const v = visitors.find(v => v.id === id);
+  if (v) {
+    v.status = 'done';
+    v.checkoutTime = new Date().toISOString();
+    res.json({ success: true });
+  } else {
+    res.status(404).json({ success: false });
+  }
+});
+
 // ローカルIPを取得
 function getLocalIP() {
   const interfaces = os.networkInterfaces();

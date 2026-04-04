@@ -651,8 +651,20 @@
 
 <script>
   // --- Data ---
+  let cachedVisitors = [];
+
+  async function fetchVisitors() {
+    try {
+      const res = await fetch('/api/visitors');
+      cachedVisitors = await res.json();
+    } catch (e) {
+      cachedVisitors = JSON.parse(localStorage.getItem('visitors') || '[]');
+    }
+    return cachedVisitors;
+  }
+
   function getVisitors() {
-    return JSON.parse(localStorage.getItem('visitors') || '[]');
+    return cachedVisitors;
   }
 
   function saveVisitors(visitors) {
@@ -686,7 +698,8 @@
   }
 
   // --- Dashboard ---
-  function renderDashboard() {
+  async function renderDashboard() {
+    await fetchVisitors();
     const visitors = getVisitors();
     const today = new Date().toDateString();
     const todayVisitors = visitors.filter(v => new Date(v.checkinTime).toDateString() === today);
@@ -767,7 +780,8 @@
   }
 
   // --- Visitors Table ---
-  function renderVisitorTable(search = '') {
+  async function renderVisitorTable(search = '') {
+    await fetchVisitors();
     let visitors = getVisitors();
     if (search) {
       const q = search.toLowerCase();
@@ -797,16 +811,16 @@
       ).join('');
   }
 
-  function checkout(id) {
-    const visitors = getVisitors();
-    const v = visitors.find(v => v.id === id);
-    if (v) {
-      v.status = 'done';
-      v.checkoutTime = new Date().toISOString();
-      saveVisitors(visitors);
-      renderVisitorTable();
-      showToast('退出処理が完了しました');
-    }
+  async function checkout(id) {
+    try {
+      await fetch('/api/visitors/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+    } catch (e) {}
+    await renderVisitorTable();
+    showToast('退出処理が完了しました');
   }
 
   // --- Settings ---
