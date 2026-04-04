@@ -1191,7 +1191,7 @@
   async function startCamera(videoId) {
     const video = document.getElementById(videoId);
     cameraStream = await navigator.mediaDevices.getUserMedia({
-      video: { width: 320, height: 240, facingMode: 'user' }
+      video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
     });
     video.srcObject = cameraStream;
     return new Promise(resolve => { video.onloadedmetadata = () => resolve(video); });
@@ -1246,7 +1246,7 @@
       if (matchFound) return;
 
       const detection = await faceapi
-        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.3 }))
         .withFaceLandmarks()
         .withFaceDescriptor();
 
@@ -1361,7 +1361,7 @@
 
     faceDetectInterval = setInterval(async () => {
       const detection = await faceapi
-        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.3 }))
         .withFaceLandmarks()
         .withFaceDescriptor();
 
