@@ -1105,10 +1105,23 @@
       body: JSON.stringify(visitor)
     }).catch(err => console.error('データ保存エラー:', err));
 
+    // 通知用に写真を縮小
+    const notifyData = { ...visitor };
+    if (notifyData.photo) {
+      try {
+        const img = new Image();
+        img.src = notifyData.photo;
+        const nc = document.createElement('canvas');
+        nc.width = 320;
+        nc.height = 240;
+        nc.getContext('2d').drawImage(img, 0, 0, 320, 240);
+        notifyData.photo = nc.toDataURL('image/jpeg', 0.5);
+      } catch (e) {}
+    }
     fetch(API_BASE + '/api/notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(visitor)
+      body: JSON.stringify(notifyData)
     }).catch(err => console.error('通知エラー:', err));
 
     showComplete(visitor);
@@ -1423,10 +1436,23 @@
       body: JSON.stringify(lastCheckinVisitor)
     }).catch(err => console.error('データ保存エラー:', err));
 
+    // 通知用に写真を縮小して送信
+    const notifyData = { ...lastCheckinVisitor };
+    if (notifyData.photo) {
+      try {
+        const img = new Image();
+        img.src = notifyData.photo;
+        const nc = document.createElement('canvas');
+        nc.width = 320;
+        nc.height = 240;
+        nc.getContext('2d').drawImage(img, 0, 0, 320, 240);
+        notifyData.photo = nc.toDataURL('image/jpeg', 0.5);
+      } catch (e) {}
+    }
     fetch(API_BASE + '/api/notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(lastCheckinVisitor)
+      body: JSON.stringify(notifyData)
     }).catch(err => console.error('通知エラー:', err));
 
     lastCheckinVisitor = null;

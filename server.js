@@ -43,8 +43,8 @@ app.post('/api/notify', async (req, res) => {
     }
   ];
 
-  // 写真があればカードに追加
-  if (photo) {
+  // 写真があればカードに追加（50KB以下のみ。大きすぎるとPower Automateが拒否する）
+  if (photo && photo.length < 70000) {
     cardBody.push({
       type: "Image",
       url: photo,
