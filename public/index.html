@@ -1197,38 +1197,66 @@
   }
 
   // --- Photo capture helper (iOS WebView compatible) ---
+  // toDataURLがiOS WKWebViewで黒を返す問題を回避するため
+  // getImageDataでピクセルを直接読み取りBMP形式で出力する
   function captureVideoFrame(video) {
     if (!video || video.videoWidth === 0) return null;
 
-    // 小さめのサイズで取得（通知用に十分）
     const w = Math.min(video.videoWidth, 320);
     const h = Math.round(w * video.videoHeight / video.videoWidth);
 
     const c = document.createElement('canvas');
     c.width = w;
     c.height = h;
-    const ctx = c.getContext('2d');
+    const ctx = c.getContext('2d', { willReadFrequently: true });
     ctx.drawImage(video, 0, 0, w, h);
 
-    // まずtoDataURLを試す
-    const dataUrl = c.toDataURL('image/jpeg', 0.6);
+    // getImageDataでピクセルデータを直接取得（これはiOSでも動く）
+    const imageData = ctx.getImageData(0, 0, w, h);
+    return imageDataToBmpDataUrl(imageData, w, h);
+  }
 
-    // 黒画像チェック：getImageDataで実際にピクセルがあるか確認
-    const pixel = ctx.getImageData(w / 2, h / 2, 1, 1).data;
-    const isBlack = (pixel[0] + pixel[1] + pixel[2]) === 0;
+  // ImageDataをBMP形式のdata URLに変換
+  function imageDataToBmpDataUrl(imageData, w, h) {
+    const data = imageData.data;
+    const rowSize = Math.floor((24 * w + 31) / 32) * 4;
+    const fileSize = 54 + rowSize * h;
+    const buf = new ArrayBuffer(fileSize);
+    const view = new DataView(buf);
 
-    if (!isBlack) {
-      return dataUrl;
+    // BMP Header
+    view.setUint8(0, 0x42); view.setUint8(1, 0x4D); // 'BM'
+    view.setUint32(2, fileSize, true);
+    view.setUint32(10, 54, true); // pixel data offset
+    // DIB Header
+    view.setUint32(14, 40, true); // header size
+    view.setInt32(18, w, true);
+    view.setInt32(22, -h, true); // top-down
+    view.setUint16(26, 1, true); // planes
+    view.setUint16(28, 24, true); // bits per pixel
+    view.setUint32(34, rowSize * h, true);
+
+    // Pixel data (BGR)
+    let offset = 54;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        view.setUint8(offset++, data[i + 2]); // B
+        view.setUint8(offset++, data[i + 1]); // G
+        view.setUint8(offset++, data[i]);     // R
+      }
+      // Row padding
+      while (offset % 4 !== 2) offset++; // align to 4 bytes from pixel start
+      offset = 54 + rowSize * (y + 1);
     }
 
-    // toDataURLが黒の場合、BMPベースのフォールバック
-    // video要素のスクリーンショットを取るためにリトライ
-    const c2 = document.createElement('canvas');
-    c2.width = w;
-    c2.height = h;
-    const ctx2 = c2.getContext('2d', { willReadFrequently: true });
-    ctx2.drawImage(video, 0, 0, w, h);
-    return c2.toDataURL('image/png');
+    // Convert to base64
+    const bytes = new Uint8Array(buf);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return 'data:image/bmp;base64,' + btoa(binary);
   }
 
   // --- Helpers ---
