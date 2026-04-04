@@ -1105,23 +1105,10 @@
       body: JSON.stringify(visitor)
     }).catch(err => console.error('データ保存エラー:', err));
 
-    // 通知用に写真を縮小
-    const notifyData = { ...visitor };
-    if (notifyData.photo) {
-      try {
-        const img = new Image();
-        img.src = notifyData.photo;
-        const nc = document.createElement('canvas');
-        nc.width = 320;
-        nc.height = 240;
-        nc.getContext('2d').drawImage(img, 0, 0, 320, 240);
-        notifyData.photo = nc.toDataURL('image/jpeg', 0.5);
-      } catch (e) {}
-    }
     fetch(API_BASE + '/api/notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(notifyData)
+      body: JSON.stringify(visitor)
     }).catch(err => console.error('通知エラー:', err));
 
     showComplete(visitor);
@@ -1196,15 +1183,6 @@
     }
   }
 
-  // --- Photo capture helper ---
-  function captureVideoFrame(video) {
-    if (!video || video.videoWidth === 0) return null;
-    const c = document.createElement('canvas');
-    c.width = 320;
-    c.height = 240;
-    c.getContext('2d').drawImage(video, 0, 0, 320, 240);
-    return c.toDataURL('image/png');
-  }
 
   // --- Helpers ---
   function formatTime(iso) {
@@ -1393,8 +1371,10 @@
         document.getElementById('face-status').textContent = '認証成功！';
         document.getElementById('face-match-result').style.display = 'block';
 
-        // マッチ成功時に写真を取得（videoはまだ再生中）
-        const photoUrl = captureVideoFrame(video);
+        // マッチ成功時に写真をcanvasから取得
+        const faceCanvas = document.getElementById('face-canvas');
+        let facePhoto = null;
+        try { facePhoto = faceCanvas.toDataURL('image/jpeg', 0.7); } catch(e) {}
 
         lastCheckinVisitor = {
           id: Date.now(),
@@ -1406,7 +1386,7 @@
           checkinTime: new Date().toISOString(),
           checkoutTime: null,
           status: 'waiting',
-          photo: photoUrl
+          photo: facePhoto
         };
       } else {
         document.getElementById('face-status').textContent = '照合中...（一致なし）';
@@ -1440,23 +1420,10 @@
       body: JSON.stringify(lastCheckinVisitor)
     }).catch(err => console.error('データ保存エラー:', err));
 
-    // 通知用に写真を縮小して送信
-    const notifyData = { ...lastCheckinVisitor };
-    if (notifyData.photo) {
-      try {
-        const img = new Image();
-        img.src = notifyData.photo;
-        const nc = document.createElement('canvas');
-        nc.width = 320;
-        nc.height = 240;
-        nc.getContext('2d').drawImage(img, 0, 0, 320, 240);
-        notifyData.photo = nc.toDataURL('image/jpeg', 0.5);
-      } catch (e) {}
-    }
     fetch(API_BASE + '/api/notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(notifyData)
+      body: JSON.stringify(lastCheckinVisitor)
     }).catch(err => console.error('通知エラー:', err));
 
     lastCheckinVisitor = null;
@@ -1519,9 +1486,9 @@
   function captureAndRegister() {
     if (!pendingVisitor) return;
 
-    // 写真をvideoから取得
-    const video = document.getElementById('register-video');
-    pendingVisitor.photo = captureVideoFrame(video);
+    // 写真をcanvasから取得（23:03時点の方式）
+    const canvas = document.getElementById('register-canvas');
+    pendingVisitor.photo = canvas.toDataURL('image/jpeg', 0.7);
 
     // 顔データを登録
     if (registerDescriptor) {
