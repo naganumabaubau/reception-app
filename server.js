@@ -1,5 +1,6 @@
 const express = require('express');
 const nodemailer = require('nodemailer');
+const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
@@ -9,8 +10,19 @@ const PORT = process.env.PORT || 3000;
 // ===== Teams Webhook URL =====
 const TEAMS_WEBHOOK_URL = process.env.TEAMS_WEBHOOK_URL || 'https://default1eb266c90d084b36af053d1d9a4f68.57.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8fdbb30e0416443b9e341b9df8df59e9/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=RL858b5WAEgabi0UQeKd9IZCZaFz1bbiCNv-P43gj50';
 
-// 設定データ（先に定義。通知APIから参照される）
-let receptionSettings = {};
+// 設定データ（ファイルに永続化）
+const SETTINGS_FILE = path.join(__dirname, 'data_settings.json');
+const VISITORS_FILE = path.join(__dirname, 'data_visitors.json');
+const FACES_FILE = path.join(__dirname, 'data_faces.json');
+
+function loadJSON(file, fallback) {
+  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { return fallback; }
+}
+function saveJSON(file, data) {
+  try { fs.writeFileSync(file, JSON.stringify(data)); } catch (e) { console.error('ファイル保存エラー:', e.message); }
+}
+
+let receptionSettings = loadJSON(SETTINGS_FILE, {});
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -163,12 +175,13 @@ app.get('/api/settings', (req, res) => {
 
 app.post('/api/settings', (req, res) => {
   receptionSettings = req.body;
-  console.log('⚙️ 設定を更新しました');
+  saveJSON(SETTINGS_FILE, receptionSettings);
+  console.log('⚙️ 設定を更新しました（ファイル保存済み）');
   res.json({ success: true });
 });
 
 // 来客データAPI（アプリ・管理画面間でデータを共有）
-let visitors = [];
+let visitors = loadJSON(VISITORS_FILE, []);
 
 app.get('/api/visitors', (req, res) => {
   // 一覧では写真データを省略（サイズ削減）
@@ -187,6 +200,7 @@ app.get('/api/visitors/:id/photo', (req, res) => {
 
 app.post('/api/visitors', (req, res) => {
   visitors.unshift(req.body);
+  saveJSON(VISITORS_FILE, visitors);
   console.log(`📋 来客データ追加: ${req.body.name}${req.body.photo ? ' (写真あり)' : ''}`);
   res.json({ success: true });
 });
@@ -197,6 +211,7 @@ app.post('/api/visitors/checkout', (req, res) => {
   if (v) {
     v.status = 'done';
     v.checkoutTime = new Date().toISOString();
+    saveJSON(VISITORS_FILE, visitors);
     res.json({ success: true });
   } else {
     res.status(404).json({ success: false });
@@ -204,7 +219,7 @@ app.post('/api/visitors/checkout', (req, res) => {
 });
 
 // 顔データAPI
-let faceDB = [];
+let faceDB = loadJSON(FACES_FILE, []);
 
 app.get('/api/faces', (req, res) => {
   res.json(faceDB);
@@ -218,12 +233,14 @@ app.post('/api/faces', (req, res) => {
   } else {
     faceDB.push(req.body);
   }
+  saveJSON(FACES_FILE, faceDB);
   console.log(`👤 顔データ登録: ${name}`);
   res.json({ success: true });
 });
 
 app.delete('/api/faces/:name', (req, res) => {
   faceDB = faceDB.filter(e => e.name !== req.params.name);
+  saveJSON(FACES_FILE, faceDB);
   res.json({ success: true });
 });
 
