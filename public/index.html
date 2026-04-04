@@ -1196,67 +1196,14 @@
     }
   }
 
-  // --- Photo capture helper (iOS WebView compatible) ---
-  // toDataURLがiOS WKWebViewで黒を返す問題を回避するため
-  // getImageDataでピクセルを直接読み取りBMP形式で出力する
+  // --- Photo capture helper ---
   function captureVideoFrame(video) {
     if (!video || video.videoWidth === 0) return null;
-
-    const w = Math.min(video.videoWidth, 320);
-    const h = Math.round(w * video.videoHeight / video.videoWidth);
-
     const c = document.createElement('canvas');
-    c.width = w;
-    c.height = h;
-    const ctx = c.getContext('2d', { willReadFrequently: true });
-    ctx.drawImage(video, 0, 0, w, h);
-
-    // getImageDataでピクセルデータを直接取得（これはiOSでも動く）
-    const imageData = ctx.getImageData(0, 0, w, h);
-    return imageDataToBmpDataUrl(imageData, w, h);
-  }
-
-  // ImageDataをBMP形式のdata URLに変換
-  function imageDataToBmpDataUrl(imageData, w, h) {
-    const data = imageData.data;
-    const rowSize = Math.floor((24 * w + 31) / 32) * 4;
-    const fileSize = 54 + rowSize * h;
-    const buf = new ArrayBuffer(fileSize);
-    const view = new DataView(buf);
-
-    // BMP Header
-    view.setUint8(0, 0x42); view.setUint8(1, 0x4D); // 'BM'
-    view.setUint32(2, fileSize, true);
-    view.setUint32(10, 54, true); // pixel data offset
-    // DIB Header
-    view.setUint32(14, 40, true); // header size
-    view.setInt32(18, w, true);
-    view.setInt32(22, -h, true); // top-down
-    view.setUint16(26, 1, true); // planes
-    view.setUint16(28, 24, true); // bits per pixel
-    view.setUint32(34, rowSize * h, true);
-
-    // Pixel data (BGR)
-    let offset = 54;
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const i = (y * w + x) * 4;
-        view.setUint8(offset++, data[i + 2]); // B
-        view.setUint8(offset++, data[i + 1]); // G
-        view.setUint8(offset++, data[i]);     // R
-      }
-      // Row padding
-      while (offset % 4 !== 2) offset++; // align to 4 bytes from pixel start
-      offset = 54 + rowSize * (y + 1);
-    }
-
-    // Convert to base64
-    const bytes = new Uint8Array(buf);
-    let binary = '';
-    for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    return 'data:image/bmp;base64,' + btoa(binary);
+    c.width = 320;
+    c.height = 240;
+    c.getContext('2d').drawImage(video, 0, 0, 320, 240);
+    return c.toDataURL('image/png');
   }
 
   // --- Helpers ---
@@ -1385,7 +1332,6 @@
   function startFaceDetection() {
     const video = document.getElementById('face-video');
     let matchFound = false;
-    let latestPhotoDataUrl = null;
 
     faceDetectInterval = setInterval(async () => {
       if (matchFound) return;
@@ -1401,11 +1347,6 @@
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       canvas.getContext('2d').drawImage(video, 0, 0);
-
-      // 毎フレーム写真を保存
-      try {
-        latestPhotoDataUrl = captureVideoFrame(video);
-      } catch (e) {}
 
       let detection;
       try {
@@ -1452,6 +1393,9 @@
         document.getElementById('face-status').textContent = '認証成功！';
         document.getElementById('face-match-result').style.display = 'block';
 
+        // マッチ成功時に写真を取得（videoはまだ再生中）
+        const photoUrl = captureVideoFrame(video);
+
         lastCheckinVisitor = {
           id: Date.now(),
           name: entry.name,
@@ -1462,7 +1406,7 @@
           checkinTime: new Date().toISOString(),
           checkoutTime: null,
           status: 'waiting',
-          photo: latestPhotoDataUrl
+          photo: photoUrl
         };
       } else {
         document.getElementById('face-status').textContent = '照合中...（一致なし）';
