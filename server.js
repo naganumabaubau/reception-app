@@ -12,9 +12,9 @@ const TEAMS_WEBHOOK_URL = process.env.TEAMS_WEBHOOK_URL || 'https://default1eb26
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Teams通知エンドポイント
+// Teams通知エンドポイント（画像添付対応）
 app.post('/api/notify', async (req, res) => {
-  const { name, company, target, purpose, count, checkinTime } = req.body;
+  const { name, company, target, purpose, count, checkinTime, photo } = req.body;
 
   const time = new Date(checkinTime).toLocaleTimeString('ja-JP', {
     hour: '2-digit',
@@ -22,48 +22,60 @@ app.post('/api/notify', async (req, res) => {
     timeZone: 'Asia/Tokyo'
   });
 
-  // Adaptive Card for Teams
+  // Adaptive Card body
+  const cardBody = [
+    {
+      type: "TextBlock",
+      text: "来客のお知らせ",
+      weight: "Bolder",
+      size: "Large",
+      color: "Accent"
+    },
+    {
+      type: "TextBlock",
+      text: `${name} 様がお見えです`,
+      weight: "Bolder",
+      size: "Medium",
+      spacing: "Small"
+    }
+  ];
+
+  // 写真があればカードに追加
+  if (photo) {
+    cardBody.push({
+      type: "Image",
+      url: photo,
+      size: "Medium",
+      horizontalAlignment: "Center",
+      spacing: "Medium"
+    });
+  }
+
+  cardBody.push({
+    type: "FactSet",
+    facts: [
+      { title: "お名前", value: `${name} 様` },
+      { title: "会社名", value: company },
+      { title: "訪問先", value: target },
+      { title: "ご用件", value: purpose },
+      { title: "人数", value: `${count}名` },
+      { title: "受付時刻", value: time }
+    ],
+    spacing: "Medium"
+  });
+
   const card = {
     type: "message",
-    attachments: [
-      {
-        contentType: "application/vnd.microsoft.card.adaptive",
-        contentUrl: null,
-        content: {
-          "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-          type: "AdaptiveCard",
-          version: "1.4",
-          body: [
-            {
-              type: "TextBlock",
-              text: "来客のお知らせ",
-              weight: "Bolder",
-              size: "Large",
-              color: "Accent"
-            },
-            {
-              type: "TextBlock",
-              text: `${name} 様がお見えです`,
-              weight: "Bolder",
-              size: "Medium",
-              spacing: "Small"
-            },
-            {
-              type: "FactSet",
-              facts: [
-                { title: "お名前", value: `${name} 様` },
-                { title: "会社名", value: company },
-                { title: "訪問先", value: target },
-                { title: "ご用件", value: purpose },
-                { title: "人数", value: `${count}名` },
-                { title: "受付時刻", value: time }
-              ],
-              spacing: "Medium"
-            }
-          ]
-        }
+    attachments: [{
+      contentType: "application/vnd.microsoft.card.adaptive",
+      contentUrl: null,
+      content: {
+        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+        type: "AdaptiveCard",
+        version: "1.4",
+        body: cardBody
       }
-    ]
+    }]
   };
 
   try {
@@ -83,7 +95,7 @@ app.post('/api/notify', async (req, res) => {
     console.error('❌ Teams通知エラー:', err.message);
   }
 
-  // メール通知
+  // メール通知（画像添付対応）
   const emailTo = receptionSettings.notifyEmail;
   const emailFrom = receptionSettings.smtpUser;
   const emailPass = receptionSettings.smtpPassword;
@@ -95,7 +107,7 @@ app.post('/api/notify', async (req, res) => {
         auth: { user: emailFrom, pass: emailPass }
       });
 
-      await transporter.sendMail({
+      const mailOptions = {
         from: `受付システム <${emailFrom}>`,
         to: emailTo,
         subject: `【来客通知】${name} 様がお見えです`,
@@ -105,6 +117,7 @@ app.post('/api/notify', async (req, res) => {
               <h2 style="margin:0;font-size:16px;">来客のお知らせ</h2>
             </div>
             <div style="background:#fff;padding:16px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 8px 8px;">
+              ${photo ? '<img src="cid:visitor-photo" style="width:100%;max-width:300px;border-radius:8px;margin-bottom:12px;" />' : ''}
               <table style="width:100%;border-collapse:collapse;">
                 <tr><td style="padding:6px 0;color:#888;width:80px;">お名前</td><td style="padding:6px 0;font-weight:bold;">${name} 様</td></tr>
                 <tr><td style="padding:6px 0;color:#888;">会社名</td><td style="padding:6px 0;">${company}</td></tr>
@@ -114,9 +127,22 @@ app.post('/api/notify', async (req, res) => {
                 <tr><td style="padding:6px 0;color:#888;">受付時刻</td><td style="padding:6px 0;">${time}</td></tr>
               </table>
             </div>
-          </div>`
-      });
-      console.log(`✉ メール送信完了: ${emailTo}`);
+          </div>`,
+        attachments: []
+      };
+
+      // 写真をBase64からバッファに変換して添付
+      if (photo) {
+        const base64Data = photo.replace(/^data:image\/\w+;base64,/, '');
+        mailOptions.attachments.push({
+          filename: `visitor_${Date.now()}.jpg`,
+          content: Buffer.from(base64Data, 'base64'),
+          cid: 'visitor-photo'
+        });
+      }
+
+      await transporter.sendMail(mailOptions);
+      console.log(`✉ メール送信完了: ${emailTo}${photo ? ' (写真付き)' : ''}`);
     } catch (err) {
       console.error('✉ メール送信エラー:', err.message);
     }
