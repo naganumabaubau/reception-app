@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理画面 - 受付システム</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif;
+      background: #f0f4f8;
+      color: #333;
+      min-height: 100vh;
+    }
+
+    /* ===== Sidebar ===== */
+    .layout { display: flex; min-height: 100vh; }
+
+    .sidebar {
+      width: 220px;
+      background: #1a2233;
+      color: #fff;
+      padding: 24px 0;
+      flex-shrink: 0;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-logo {
+      padding: 0 20px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 16px;
+    }
+
+    .sidebar-logo h1 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .sidebar-logo span {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      margin-top: 2px;
+      display: block;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      color: rgba(255,255,255,0.5);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      font-family: inherit;
+    }
+
+    .nav-link:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .nav-link.active { color: #fff; background: rgba(0,155,219,0.2); border-right: 3px solid #009bdb; }
+
+    .nav-link svg { width: 20px; height: 20px; fill: currentColor; flex-shrink: 0; }
+
+    /* ===== Main ===== */
+    .main {
+      flex: 1;
+      margin-left: 220px;
+      padding: 32px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+
+    .page-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a2233;
+    }
+
+    .page-header-date {
+      font-size: 14px;
+      color: #999;
+    }
+
+    /* ===== Dashboard Cards ===== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: #999;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: #1a2233;
+    }
+
+    .stat-unit {
+      font-size: 14px;
+      color: #999;
+      font-weight: 400;
+      margin-left: 2px;
+    }
+
+    .stat-card.accent { border-left: 4px solid #009bdb; }
+    .stat-card.warning { border-left: 4px solid #ff8f00; }
+    .stat-card.success { border-left: 4px solid #43a047; }
+    .stat-card.info { border-left: 4px solid #7c4dff; }
+
+    /* ===== Chart ===== */
+    .chart-section {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .chart-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+    }
+
+    .chart-card h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      height: 140px;
+      padding-top: 10px;
+    }
+
+    .bar-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .bar {
+      width: 100%;
+      max-width: 36px;
+      background: linear-gradient(180deg, #009bdb, #006fa1);
+      border-radius: 6px 6px 0 0;
+      min-height: 4px;
+      transition: height 0.5s ease;
+    }
+
+    .bar-label {
+      font-size: 11px;
+      color: #999;
+    }
+
+    .purpose-list { list-style: none; }
+
+    .purpose-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f3f6;
+    }
+
+    .purpose-item:last-child { border-bottom: none; }
+
+    .purpose-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+
+    .purpose-name {
+      flex: 1;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .purpose-count {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    /* ===== Page Section ===== */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ===== Table ===== */
+    .table-card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+      overflow: hidden;
+    }
+
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid #f0f3f6;
+    }
+
+    .table-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .table-search {
+      padding: 10px 14px;
+      border: 2px solid #e0e5eb;
+      border-radius: 10px;
+      font-size: 14px;
+      width: 240px;
+      font-family: inherit;
+    }
+
+    .table-search:focus { outline: none; border-color: #009bdb; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      padding: 12px 24px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: #fafbfc;
+      border-bottom: 1px solid #f0f3f6;
+    }
+
+    tbody td {
+      padding: 14px 24px;
+      font-size: 14px;
+      border-bottom: 1px solid #f0f3f6;
+    }
+
+    tbody tr:hover { background: #f8fafc; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .td-name { font-weight: 600; color: #1a2233; }
+    .td-company { color: #009bdb; }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-waiting { background: #fff3e0; color: #e65100; }
+    .badge-done { background: #e8f5e9; color: #2e7d32; }
+
+    .btn-sm {
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+      background: #009bdb;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-sm:hover { background: #0080b8; }
+
+    .btn-danger-sm {
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #e53935;
+      background: #fbe9e7;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-danger-sm:hover { background: #ffcdd2; }
+
+    /* ===== Settings ===== */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .settings-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+    }
+
+    .settings-card h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #f0f3f6;
+    }
+
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+    }
+
+    .setting-label {
+      font-size: 14px;
+      color: #555;
+    }
+
+    .setting-input {
+      padding: 8px 12px;
+      border: 2px solid #e0e5eb;
+      border-radius: 8px;
+      font-size: 14px;
+      width: 200px;
+      font-family: inherit;
+    }
+
+    .setting-input:focus { outline: none; border-color: #009bdb; }
+
+    .btn-save {
+      margin-top: 16px;
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      background: #009bdb;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-save:hover { background: #0080b8; }
+
+    /* ===== Toggle Switch ===== */
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f3f6;
+    }
+
+    .toggle-row:last-child { border-bottom: none; }
+
+    .toggle-label {
+      font-size: 14px;
+      color: #555;
+    }
+
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #ccc;
+      border-radius: 24px;
+      transition: 0.2s;
+    }
+
+    .toggle-slider:before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      bottom: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+
+    .toggle input:checked + .toggle-slider {
+      background: #009bdb;
+    }
+
+    .toggle input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      background: #1a2233;
+      color: #fff;
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+
+    .toast.show { transform: translateY(0); opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <h1>受付システム</h1>
+      <span>管理画面</span>
+    </div>
+    <button class="nav-link active" onclick="showSection('dashboard')">
+      <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+      ダッシュボード
+    </button>
+    <button class="nav-link" onclick="showSection('visitors')">
+      <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      来客一覧
+    </button>
+    <button class="nav-link" onclick="showSection('settings')">
+      <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+      設定
+    </button>
+  </nav>
+
+  <div class="main">
+    <!-- ===== Dashboard ===== -->
+    <div id="section-dashboard" class="section active">
+      <div class="page-header">
+        <h2>ダッシュボード</h2>
+        <span class="page-header-date" id="today-date"></span>
+      </div>
+
+      <div class="stats-grid" id="stats-grid"></div>
+
+      <div class="chart-section">
+        <div class="chart-card">
+          <h3>時間帯別 来客数（本日）</h3>
+          <div class="bar-chart" id="hourly-chart"></div>
+        </div>
+        <div class="chart-card">
+          <h3>用件別 内訳</h3>
+          <ul class="purpose-list" id="purpose-list"></ul>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <h3>最近の来客</h3>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>名前</th>
+              <th>会社</th>
+              <th>訪問先</th>
+              <th>用件</th>
+              <th>時刻</th>
+              <th>状態</th>
+            </tr>
+          </thead>
+          <tbody id="recent-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== Visitors ===== -->
+    <div id="section-visitors" class="section">
+      <div class="page-header">
+        <h2>来客一覧</h2>
+      </div>
+      <div class="table-card">
+        <div class="table-header">
+          <h3>全来客データ</h3>
+          <input type="text" class="table-search" placeholder="名前・会社名で検索..." oninput="renderVisitorTable(this.value)">
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>名前</th>
+              <th>会社</th>
+              <th>訪問先</th>
+              <th>用件</th>
+              <th>人数</th>
+              <th>受付</th>
+              <th>退出</th>
+              <th>状態</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="visitors-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== Settings ===== -->
+    <div id="section-settings" class="section">
+      <div class="page-header">
+        <h2>設定</h2>
+      </div>
+      <div class="settings-grid">
+        <div class="settings-card">
+          <h3>メニューボタン</h3>
+          <p style="font-size:13px;color:#999;margin-bottom:12px">受付画面に表示するメニューボタンのON/OFF</p>
+          <div class="toggle-row">
+            <span class="toggle-label">アポイントなし</span>
+            <label class="toggle"><input type="checkbox" id="menu-noappointment" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-row">
+            <span class="toggle-label">打ち合わせ</span>
+            <label class="toggle"><input type="checkbox" id="menu-meeting" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-row">
+            <span class="toggle-label">面接</span>
+            <label class="toggle"><input type="checkbox" id="menu-interview" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-row">
+            <span class="toggle-label">その他</span>
+            <label class="toggle"><input type="checkbox" id="menu-other" checked><span class="toggle-slider"></span></label>
+          </div>
+          <button class="btn-save" onclick="saveSettings()">保存する</button>
+        </div>
+        <div class="settings-card">
+          <h3>入力項目</h3>
+          <p style="font-size:13px;color:#999;margin-bottom:12px">受付フォームに表示する入力項目のON/OFF</p>
+          <div class="toggle-row">
+            <span class="toggle-label">お名前</span>
+            <label class="toggle"><input type="checkbox" id="field-name" checked disabled><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-row">
+            <span class="toggle-label">会社名</span>
+            <label class="toggle"><input type="checkbox" id="field-company" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-row">
+            <span class="toggle-label">訪問先（担当者名）</span>
+            <label class="toggle"><input type="checkbox" id="field-target" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-row">
+            <span class="toggle-label">ご用件</span>
+            <label class="toggle"><input type="checkbox" id="field-purpose" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-row">
+            <span class="toggle-label">人数</span>
+            <label class="toggle"><input type="checkbox" id="field-count" checked><span class="toggle-slider"></span></label>
+          </div>
+          <button class="btn-save" onclick="saveSettings()">保存する</button>
+        </div>
+        <div class="settings-card">
+          <h3>受付画面</h3>
+          <div class="setting-row">
+            <span class="setting-label">ウェルカムメッセージ</span>
+          </div>
+          <input type="text" class="setting-input" id="setting-welcome" style="width:100%;margin-bottom:12px" value="ようこそ">
+          <div class="setting-row">
+            <span class="setting-label">サブメッセージ</span>
+          </div>
+          <input type="text" class="setting-input" id="setting-sub" style="width:100%;margin-bottom:12px" value="ご用件をお選びください">
+          <div class="setting-row">
+            <span class="setting-label">完了メッセージ</span>
+          </div>
+          <input type="text" class="setting-input" id="setting-complete" style="width:100%;margin-bottom:12px" value="担当者に通知しました。少々お待ちください。">
+          <button class="btn-save" onclick="saveSettings()">保存する</button>
+        </div>
+        <div class="settings-card">
+          <h3>通知設定</h3>
+          <div class="setting-row">
+            <span class="setting-label">Teams Webhook URL</span>
+          </div>
+          <input type="text" class="setting-input" id="setting-webhook" style="width:100%;margin-bottom:12px" placeholder="https://...">
+          <div class="setting-row">
+            <span class="setting-label">自動リセット（秒）</span>
+            <input type="number" class="setting-input" id="setting-reset" style="width:100px" value="30">
+          </div>
+          <button class="btn-save" onclick="saveSettings()">保存する</button>
+        </div>
+        <div class="settings-card">
+          <h3>データ管理</h3>
+          <p style="font-size:14px;color:#888;margin-bottom:16px">来客データの管理</p>
+          <button class="btn-danger-sm" onclick="clearData()" style="padding:10px 20px;font-size:14px">全データを削除</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // --- Data ---
+  function getVisitors() {
+    return JSON.parse(localStorage.getItem('visitors') || '[]');
+  }
+
+  function saveVisitors(visitors) {
+    localStorage.setItem('visitors', JSON.stringify(visitors));
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function formatTime(iso) {
+    return new Date(iso).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function formatDate(iso) {
+    return new Date(iso).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' });
+  }
+
+  // --- Navigation ---
+  function showSection(name) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+    document.getElementById('section-' + name).classList.add('active');
+    event.currentTarget.classList.add('active');
+
+    if (name === 'dashboard') renderDashboard();
+    if (name === 'visitors') renderVisitorTable();
+    if (name === 'settings') loadSettings();
+  }
+
+  // --- Dashboard ---
+  function renderDashboard() {
+    const visitors = getVisitors();
+    const today = new Date().toDateString();
+    const todayVisitors = visitors.filter(v => new Date(v.checkinTime).toDateString() === today);
+    const waiting = todayVisitors.filter(v => v.status === 'waiting');
+
+    // Date
+    document.getElementById('today-date').textContent =
+      new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+
+    // Stats
+    const avgCount = visitors.length > 0
+      ? Math.round(visitors.length / Math.max(1, new Set(visitors.map(v => new Date(v.checkinTime).toDateString())).size))
+      : 0;
+
+    document.getElementById('stats-grid').innerHTML = `
+      <div class="stat-card accent">
+        <div class="stat-label">本日の来客数</div>
+        <div class="stat-value">${todayVisitors.length}<span class="stat-unit">名</span></div>
+      </div>
+      <div class="stat-card warning">
+        <div class="stat-label">対応中</div>
+        <div class="stat-value">${waiting.length}<span class="stat-unit">名</span></div>
+      </div>
+      <div class="stat-card success">
+        <div class="stat-label">退出済み</div>
+        <div class="stat-value">${todayVisitors.length - waiting.length}<span class="stat-unit">名</span></div>
+      </div>
+      <div class="stat-card info">
+        <div class="stat-label">1日平均</div>
+        <div class="stat-value">${avgCount}<span class="stat-unit">名</span></div>
+      </div>
+    `;
+
+    // Hourly chart
+    const hours = {};
+    for (let h = 8; h <= 20; h++) hours[h] = 0;
+    todayVisitors.forEach(v => {
+      const h = new Date(v.checkinTime).getHours();
+      if (hours[h] !== undefined) hours[h]++;
+    });
+    const maxH = Math.max(1, ...Object.values(hours));
+    document.getElementById('hourly-chart').innerHTML = Object.entries(hours).map(([h, c]) =>
+      `<div class="bar-item">
+        <div class="bar" style="height:${(c / maxH) * 120}px"></div>
+        <span class="bar-label">${h}時</span>
+      </div>`
+    ).join('');
+
+    // Purpose breakdown
+    const purposes = {};
+    const colors = ['#009bdb', '#ff8f00', '#43a047', '#7c4dff', '#e53935'];
+    todayVisitors.forEach(v => { purposes[v.purpose] = (purposes[v.purpose] || 0) + 1; });
+    const purposeEntries = Object.entries(purposes).sort((a, b) => b[1] - a[1]);
+    document.getElementById('purpose-list').innerHTML = purposeEntries.length === 0
+      ? '<li style="padding:20px;text-align:center;color:#bbb;font-size:14px">本日の来客はまだありません</li>'
+      : purposeEntries.map(([name, count], i) =>
+        `<li class="purpose-item">
+          <span class="purpose-dot" style="background:${colors[i % colors.length]}"></span>
+          <span class="purpose-name">${escapeHtml(name)}</span>
+          <span class="purpose-count">${count}件</span>
+        </li>`
+      ).join('');
+
+    // Recent table
+    const recent = visitors.slice(0, 5);
+    document.getElementById('recent-tbody').innerHTML = recent.length === 0
+      ? '<tr><td colspan="6" style="text-align:center;padding:40px;color:#bbb">来客データがありません</td></tr>'
+      : recent.map(v =>
+        `<tr>
+          <td class="td-name">${escapeHtml(v.name)}</td>
+          <td class="td-company">${escapeHtml(v.company)}</td>
+          <td>${escapeHtml(v.target)}</td>
+          <td>${escapeHtml(v.purpose)}</td>
+          <td>${formatTime(v.checkinTime)}</td>
+          <td><span class="badge ${v.status === 'waiting' ? 'badge-waiting' : 'badge-done'}">${v.status === 'waiting' ? '対応中' : '退出済み'}</span></td>
+        </tr>`
+      ).join('');
+  }
+
+  // --- Visitors Table ---
+  function renderVisitorTable(search = '') {
+    let visitors = getVisitors();
+    if (search) {
+      const q = search.toLowerCase();
+      visitors = visitors.filter(v =>
+        v.name.toLowerCase().includes(q) || v.company.toLowerCase().includes(q)
+      );
+    }
+
+    document.getElementById('visitors-tbody').innerHTML = visitors.length === 0
+      ? '<tr><td colspan="9" style="text-align:center;padding:40px;color:#bbb">データがありません</td></tr>'
+      : visitors.map(v =>
+        `<tr>
+          <td class="td-name">${escapeHtml(v.name)}</td>
+          <td class="td-company">${escapeHtml(v.company)}</td>
+          <td>${escapeHtml(v.target)}</td>
+          <td>${escapeHtml(v.purpose)}</td>
+          <td>${v.count}名</td>
+          <td>${formatDate(v.checkinTime)} ${formatTime(v.checkinTime)}</td>
+          <td>${v.checkoutTime ? formatTime(v.checkoutTime) : '—'}</td>
+          <td><span class="badge ${v.status === 'waiting' ? 'badge-waiting' : 'badge-done'}">${v.status === 'waiting' ? '対応中' : '退出済み'}</span></td>
+          <td>
+            ${v.status === 'waiting'
+              ? `<button class="btn-sm" onclick="checkout(${v.id})">退出処理</button>`
+              : ''}
+          </td>
+        </tr>`
+      ).join('');
+  }
+
+  function checkout(id) {
+    const visitors = getVisitors();
+    const v = visitors.find(v => v.id === id);
+    if (v) {
+      v.status = 'done';
+      v.checkoutTime = new Date().toISOString();
+      saveVisitors(visitors);
+      renderVisitorTable();
+      showToast('退出処理が完了しました');
+    }
+  }
+
+  // --- Settings ---
+  function loadSettings() {
+    const s = JSON.parse(localStorage.getItem('reception_settings') || '{}');
+    document.getElementById('setting-welcome').value = s.welcome || 'ようこそ';
+    document.getElementById('setting-sub').value = s.sub || 'ご用件をお選びください';
+    document.getElementById('setting-complete').value = s.complete || '担当者に通知しました。少々お待ちください。';
+    document.getElementById('setting-webhook').value = s.webhook || '';
+    document.getElementById('setting-reset').value = s.resetTime || 30;
+
+    // Menu buttons
+    const menus = s.menus || { noappointment: true, meeting: true, interview: true, other: true };
+    document.getElementById('menu-noappointment').checked = menus.noappointment !== false;
+    document.getElementById('menu-meeting').checked = menus.meeting !== false;
+    document.getElementById('menu-interview').checked = menus.interview !== false;
+    document.getElementById('menu-other').checked = menus.other !== false;
+
+    // Form fields
+    const fields = s.fields || { company: true, target: true, purpose: true, count: true };
+    document.getElementById('field-company').checked = fields.company !== false;
+    document.getElementById('field-target').checked = fields.target !== false;
+    document.getElementById('field-purpose').checked = fields.purpose !== false;
+    document.getElementById('field-count').checked = fields.count !== false;
+  }
+
+  function saveSettings() {
+    const settings = {
+      welcome: document.getElementById('setting-welcome').value,
+      sub: document.getElementById('setting-sub').value,
+      complete: document.getElementById('setting-complete').value,
+      webhook: document.getElementById('setting-webhook').value,
+      resetTime: parseInt(document.getElementById('setting-reset').value) || 30,
+      menus: {
+        noappointment: document.getElementById('menu-noappointment').checked,
+        meeting: document.getElementById('menu-meeting').checked,
+        interview: document.getElementById('menu-interview').checked,
+        other: document.getElementById('menu-other').checked
+      },
+      fields: {
+        company: document.getElementById('field-company').checked,
+        target: document.getElementById('field-target').checked,
+        purpose: document.getElementById('field-purpose').checked,
+        count: document.getElementById('field-count').checked
+      }
+    };
+    localStorage.setItem('reception_settings', JSON.stringify(settings));
+
+    // サーバーにも保存（アプリと共有）
+    fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings)
+    }).catch(err => console.error('設定同期エラー:', err));
+
+    showToast('設定を保存しました');
+  }
+
+  function clearData() {
+    if (confirm('全ての来客データを削除しますか？この操作は取り消せません。')) {
+      localStorage.removeItem('visitors');
+      renderDashboard();
+      showToast('全データを削除しました');
+    }
+  }
+
+  // --- Toast ---
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // --- Auto refresh ---
+  setInterval(() => {
+    if (document.getElementById('section-dashboard').classList.contains('active')) {
+      renderDashboard();
+    }
+  }, 10000);
+
+  // --- Init ---
+  renderDashboard();
+</script>
+
+</body>
+</html>
