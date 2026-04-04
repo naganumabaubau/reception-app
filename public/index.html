@@ -1338,8 +1338,14 @@
       canvas.height = video.videoHeight;
       canvas.getContext('2d').drawImage(video, 0, 0);
 
-      // 毎フレーム写真を保存（カメラ停止後は取得できないため）
-      latestPhotoDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+      // 毎フレーム写真を保存（videoから別canvasに描画）
+      try {
+        const pc = document.createElement('canvas');
+        pc.width = video.videoWidth;
+        pc.height = video.videoHeight;
+        pc.getContext('2d').drawImage(video, 0, 0);
+        latestPhotoDataUrl = pc.toDataURL('image/jpeg', 0.6);
+      } catch (e) {}
 
       let detection;
       try {
@@ -1509,10 +1515,13 @@
   function captureAndRegister() {
     if (!pendingVisitor) return;
 
-    // 写真をcanvasから取得
-    const canvas = document.getElementById('register-canvas');
-    const photo = canvas.toDataURL('image/jpeg', 0.7);
-    pendingVisitor.photo = photo;
+    // 写真をvideoから直接取得
+    const video = document.getElementById('register-video');
+    const pc = document.createElement('canvas');
+    pc.width = video.videoWidth || 480;
+    pc.height = video.videoHeight || 360;
+    pc.getContext('2d').drawImage(video, 0, 0);
+    pendingVisitor.photo = pc.toDataURL('image/jpeg', 0.6);
 
     // 顔データを登録
     if (registerDescriptor) {
