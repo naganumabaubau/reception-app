@@ -658,37 +658,40 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px 40px;
+      padding: 12px 40px;
     }
 
     .consent-card {
       background: #fff;
       border-radius: 16px;
-      padding: 32px;
-      max-width: 560px;
+      padding: 20px 32px;
+      max-width: 640px;
       box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-      text-align: center;
+      display: flex;
+      align-items: center;
+      gap: 32px;
     }
 
     .consent-card h3 {
-      font-size: 20px;
+      font-size: 16px;
       font-weight: 700;
       color: #333;
-      margin-bottom: 16px;
+      margin-bottom: 10px;
     }
 
     .consent-card p {
-      font-size: 14px;
+      font-size: 12px;
       color: #666;
-      line-height: 1.8;
+      line-height: 1.7;
       text-align: left;
-      margin-bottom: 20px;
+      margin-bottom: 0;
     }
 
     .consent-buttons {
       display: flex;
-      gap: 12px;
-      justify-content: center;
+      flex-direction: column;
+      gap: 10px;
+      flex-shrink: 0;
     }
 
     .consent-buttons .btn-primary {
@@ -833,17 +836,17 @@
   </div>
   <div class="consent-body">
     <div class="consent-card">
-      <h3>顔認証のご利用について</h3>
-      <p>
-        本システムでは、受付を迅速に行うために顔認証技術を使用しています。<br><br>
-        ・撮影した顔データは本端末内にのみ保存され、外部に送信されることはありません。<br>
-        ・顔データは受付の本人確認のみに使用されます。<br>
-        ・登録データはいつでも削除を依頼できます。<br><br>
-        同意いただける場合は「同意して進む」をタップしてください。
-      </p>
+      <div>
+        <h3>顔認証のご利用について</h3>
+        <p>
+          ・顔データは本端末内にのみ保存され、外部送信されません<br>
+          ・受付の本人確認のみに使用されます<br>
+          ・登録データはいつでも削除を依頼できます
+        </p>
+      </div>
       <div class="consent-buttons">
-        <button class="btn-secondary" onclick="goTo('menu')">戻る</button>
         <button class="btn-primary" onclick="onConsent()">同意して進む</button>
+        <button class="btn-secondary" onclick="goTo('menu')">戻る</button>
       </div>
     </div>
   </div>
