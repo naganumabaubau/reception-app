@@ -9,6 +9,9 @@ const PORT = process.env.PORT || 3000;
 // ===== Teams Webhook URL =====
 const TEAMS_WEBHOOK_URL = process.env.TEAMS_WEBHOOK_URL || 'https://default1eb266c90d084b36af053d1d9a4f68.57.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8fdbb30e0416443b9e341b9df8df59e9/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=RL858b5WAEgabi0UQeKd9IZCZaFz1bbiCNv-P43gj50';
 
+// 設定データ（先に定義。通知APIから参照される）
+let receptionSettings = {};
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -79,7 +82,9 @@ app.post('/api/notify', async (req, res) => {
   };
 
   try {
-    const response = await fetch(TEAMS_WEBHOOK_URL, {
+    // 管理画面の設定を優先、なければデフォルト
+    const webhookUrl = receptionSettings.webhook || TEAMS_WEBHOOK_URL;
+    const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(card)
@@ -152,8 +157,6 @@ app.post('/api/notify', async (req, res) => {
 });
 
 // 設定API（管理画面とアプリ間で設定を共有）
-let receptionSettings = {};
-
 app.get('/api/settings', (req, res) => {
   res.json(receptionSettings);
 });
