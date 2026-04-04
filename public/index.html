@@ -1382,6 +1382,13 @@
         document.getElementById('face-status').textContent = '認証成功！';
         document.getElementById('face-match-result').style.display = 'block';
 
+        // マッチ成功時（カメラ稼働中）に写真を取得
+        const photoCanvas = document.getElementById('face-canvas');
+        let facePhoto = null;
+        if (photoCanvas.width > 0 && photoCanvas.height > 0) {
+          facePhoto = photoCanvas.toDataURL('image/jpeg', 0.7);
+        }
+
         lastCheckinVisitor = {
           id: Date.now(),
           name: entry.name,
@@ -1391,7 +1398,8 @@
           count: '1',
           checkinTime: new Date().toISOString(),
           checkoutTime: null,
-          status: 'waiting'
+          status: 'waiting',
+          photo: facePhoto
         };
       } else {
         document.getElementById('face-status').textContent = '照合中...（一致なし）';
@@ -1410,17 +1418,6 @@
   // 顔認証でチェックイン
   function faceCheckin() {
     if (!lastCheckinVisitor) return;
-
-    // カメラから写真を取得（検出ループで既にcanvasに描画済みだが念のため再描画）
-    const video = document.getElementById('face-video');
-    const photoCanvas = document.createElement('canvas');
-    if (video.videoWidth > 0) {
-      photoCanvas.width = video.videoWidth;
-      photoCanvas.height = video.videoHeight;
-      photoCanvas.getContext('2d').drawImage(video, 0, 0);
-      lastCheckinVisitor.photo = photoCanvas.toDataURL('image/jpeg', 0.7);
-    }
-
     stopCamera();
 
     const visitors = getVisitors();
