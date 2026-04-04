@@ -1139,6 +1139,7 @@
       <div class="complete-card-row"><span class="complete-card-label">ご用件</span><span class="complete-card-value">${escapeHtml(visitor.purpose)}</span></div>
       <div class="complete-card-row"><span class="complete-card-label">人数</span><span class="complete-card-value">${visitor.count}名</span></div>
       <div class="complete-card-row"><span class="complete-card-label">受付時刻</span><span class="complete-card-value">${formatTime(visitor.checkinTime)}</span></div>
+      ${visitor.photo ? `<div style="margin-top:8px;text-align:center;"><img src="${visitor.photo}" style="width:80px;height:60px;border-radius:6px;object-fit:cover;" /></div>` : ''}
     `;
 
     goTo('complete');
@@ -1193,6 +1194,41 @@
       saveVisitors(visitors);
       renderLog();
     }
+  }
+
+  // --- Photo capture helper (iOS WebView compatible) ---
+  function captureVideoFrame(video) {
+    if (!video || video.videoWidth === 0) return null;
+
+    // 小さめのサイズで取得（通知用に十分）
+    const w = Math.min(video.videoWidth, 320);
+    const h = Math.round(w * video.videoHeight / video.videoWidth);
+
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(video, 0, 0, w, h);
+
+    // まずtoDataURLを試す
+    const dataUrl = c.toDataURL('image/jpeg', 0.6);
+
+    // 黒画像チェック：getImageDataで実際にピクセルがあるか確認
+    const pixel = ctx.getImageData(w / 2, h / 2, 1, 1).data;
+    const isBlack = (pixel[0] + pixel[1] + pixel[2]) === 0;
+
+    if (!isBlack) {
+      return dataUrl;
+    }
+
+    // toDataURLが黒の場合、BMPベースのフォールバック
+    // video要素のスクリーンショットを取るためにリトライ
+    const c2 = document.createElement('canvas');
+    c2.width = w;
+    c2.height = h;
+    const ctx2 = c2.getContext('2d', { willReadFrequently: true });
+    ctx2.drawImage(video, 0, 0, w, h);
+    return c2.toDataURL('image/png');
   }
 
   // --- Helpers ---
@@ -1338,13 +1374,9 @@
       canvas.height = video.videoHeight;
       canvas.getContext('2d').drawImage(video, 0, 0);
 
-      // 毎フレーム写真を保存（videoから別canvasに描画）
+      // 毎フレーム写真を保存
       try {
-        const pc = document.createElement('canvas');
-        pc.width = video.videoWidth;
-        pc.height = video.videoHeight;
-        pc.getContext('2d').drawImage(video, 0, 0);
-        latestPhotoDataUrl = pc.toDataURL('image/jpeg', 0.6);
+        latestPhotoDataUrl = captureVideoFrame(video);
       } catch (e) {}
 
       let detection;
@@ -1515,13 +1547,9 @@
   function captureAndRegister() {
     if (!pendingVisitor) return;
 
-    // 写真をvideoから直接取得
+    // 写真をvideoから取得
     const video = document.getElementById('register-video');
-    const pc = document.createElement('canvas');
-    pc.width = video.videoWidth || 480;
-    pc.height = video.videoHeight || 360;
-    pc.getContext('2d').drawImage(video, 0, 0);
-    pendingVisitor.photo = pc.toDataURL('image/jpeg', 0.6);
+    pendingVisitor.photo = captureVideoFrame(video);
 
     // 顔データを登録
     if (registerDescriptor) {
