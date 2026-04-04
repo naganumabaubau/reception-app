@@ -1,4 +1,5 @@
 const express = require('express');
+const nodemailer = require('nodemailer');
 const path = require('path');
 const os = require('os');
 
@@ -8,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 // ===== Teams Webhook URL =====
 const TEAMS_WEBHOOK_URL = process.env.TEAMS_WEBHOOK_URL || 'https://default1eb266c90d084b36af053d1d9a4f68.57.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8fdbb30e0416443b9e341b9df8df59e9/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=RL858b5WAEgabi0UQeKd9IZCZaFz1bbiCNv-P43gj50';
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Teams通知エンドポイント
@@ -74,16 +75,54 @@ app.post('/api/notify', async (req, res) => {
 
     if (response.ok) {
       console.log(`✅ Teams通知送信完了: ${name} 様の来客通知`);
-      res.json({ success: true });
     } else {
       const text = await response.text();
       console.error('❌ Teams通知エラー:', response.status, text);
-      res.status(500).json({ success: false, error: text });
     }
   } catch (err) {
     console.error('❌ Teams通知エラー:', err.message);
-    res.status(500).json({ success: false, error: err.message });
   }
+
+  // メール通知
+  const emailTo = receptionSettings.notifyEmail;
+  const emailFrom = receptionSettings.smtpUser;
+  const emailPass = receptionSettings.smtpPassword;
+
+  if (emailTo && emailFrom && emailPass) {
+    try {
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user: emailFrom, pass: emailPass }
+      });
+
+      await transporter.sendMail({
+        from: `受付システム <${emailFrom}>`,
+        to: emailTo,
+        subject: `【来客通知】${name} 様がお見えです`,
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;">
+            <div style="background:#009bdb;color:#fff;padding:14px 20px;border-radius:8px 8px 0 0;">
+              <h2 style="margin:0;font-size:16px;">来客のお知らせ</h2>
+            </div>
+            <div style="background:#fff;padding:16px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 8px 8px;">
+              <table style="width:100%;border-collapse:collapse;">
+                <tr><td style="padding:6px 0;color:#888;width:80px;">お名前</td><td style="padding:6px 0;font-weight:bold;">${name} 様</td></tr>
+                <tr><td style="padding:6px 0;color:#888;">会社名</td><td style="padding:6px 0;">${company}</td></tr>
+                <tr><td style="padding:6px 0;color:#888;">訪問先</td><td style="padding:6px 0;">${target}</td></tr>
+                <tr><td style="padding:6px 0;color:#888;">ご用件</td><td style="padding:6px 0;">${purpose}</td></tr>
+                <tr><td style="padding:6px 0;color:#888;">人数</td><td style="padding:6px 0;">${count}名</td></tr>
+                <tr><td style="padding:6px 0;color:#888;">受付時刻</td><td style="padding:6px 0;">${time}</td></tr>
+              </table>
+            </div>
+          </div>`
+      });
+      console.log(`✉ メール送信完了: ${emailTo}`);
+    } catch (err) {
+      console.error('✉ メール送信エラー:', err.message);
+    }
+  }
+
+  res.json({ success: true });
 });
 
 // 設定API（管理画面とアプリ間で設定を共有）
@@ -103,12 +142,23 @@ app.post('/api/settings', (req, res) => {
 let visitors = [];
 
 app.get('/api/visitors', (req, res) => {
-  res.json(visitors);
+  // 一覧では写真データを省略（サイズ削減）
+  const list = visitors.map(({ photo, ...rest }) => ({ ...rest, hasPhoto: !!photo }));
+  res.json(list);
+});
+
+app.get('/api/visitors/:id/photo', (req, res) => {
+  const v = visitors.find(v => v.id === parseInt(req.params.id));
+  if (v && v.photo) {
+    res.json({ photo: v.photo });
+  } else {
+    res.status(404).json({ photo: null });
+  }
 });
 
 app.post('/api/visitors', (req, res) => {
   visitors.unshift(req.body);
-  console.log(`📋 来客データ追加: ${req.body.name}`);
+  console.log(`📋 来客データ追加: ${req.body.name}${req.body.photo ? ' (写真あり)' : ''}`);
   res.json({ success: true });
 });
 

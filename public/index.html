@@ -175,22 +175,22 @@
       color: #888;
     }
 
-    /* 5 cards in one row, vertically centred in remaining space */
+    /* 5 cards in one row, responsive sizing */
     .menu-grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 10px;
-      padding: 8px max(env(safe-area-inset-right, 0px), 20px)
-               8px max(env(safe-area-inset-left, 0px), 20px);
+      gap: clamp(6px, 1.2vw, 16px);
+      padding: 8px max(env(safe-area-inset-right, 0px), 3vw)
+               8px max(env(safe-area-inset-left, 0px), 3vw);
       flex: 1;
-      align-items: center;   /* vertically centre the row */
+      align-items: center;
       align-content: center;
     }
 
     .menu-card {
       background: #fff;
-      border-radius: 12px;
-      padding: 10px 6px;
+      border-radius: clamp(8px, 1.5vw, 16px);
+      padding: clamp(8px, 2vh, 20px) clamp(4px, 1vw, 12px);
       text-align: center;
       cursor: pointer;
       box-shadow: 0 2px 10px rgba(0,0,0,0.06);
@@ -205,31 +205,31 @@
     }
 
     .menu-card-icon {
-      width: 34px;
-      height: 34px;
+      width: clamp(28px, 7vh, 52px);
+      height: clamp(28px, 7vh, 52px);
       background: #e8f4fd;
-      border-radius: 9px;
+      border-radius: clamp(6px, 1.2vw, 14px);
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 6px;
+      margin: 0 auto clamp(4px, 1vh, 10px);
     }
 
     .menu-card-icon svg {
-      width: 18px;
-      height: 18px;
+      width: clamp(16px, 4vh, 28px);
+      height: clamp(16px, 4vh, 28px);
       fill: #009bdb;
     }
 
     .menu-card-title {
-      font-size: 12px;
+      font-size: clamp(10px, 1.5vw, 15px);
       font-weight: 600;
       color: #333;
       line-height: 1.3;
     }
 
     .menu-card-desc {
-      font-size: 9px;
+      font-size: clamp(8px, 1.1vw, 12px);
       color: #999;
       margin-top: 2px;
     }
@@ -940,13 +940,13 @@
   </div>
 </div>
 
-<!-- ===== 3d. Face Register Screen ===== -->
-<div id="screen-face-register" class="screen face-screen">
+<!-- ===== 3d. Photo Capture Screen ===== -->
+<div id="screen-photo" class="screen face-screen">
   <div class="app-header">
-    <button class="back-btn" onclick="stopCamera(); goTo('menu')">
+    <button class="back-btn" onclick="skipPhoto()">
       <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
     </button>
-    <div class="header-title">顔の登録</div>
+    <div class="header-title">写真撮影</div>
   </div>
   <div class="face-body">
     <div class="camera-wrap">
@@ -955,12 +955,11 @@
       <div class="camera-overlay" id="register-overlay"></div>
     </div>
     <div class="face-info">
-      <h3>顔を登録しますか？</h3>
-      <p>次回から顔認証で受付できます</p>
-      <div class="face-status" id="register-status">カメラに顔を向けてください</div>
-      <button class="btn-primary" id="btn-register-face" style="width:auto;padding:14px 40px;" onclick="registerFace()" disabled>顔を登録する</button>
-      <br>
-      <button class="btn-secondary" style="margin-top:12px;padding:10px 24px;font-size:13px;" onclick="skipRegister()">スキップ</button>
+      <h3>カメラに顔を向けてください</h3>
+      <p>写真を撮影し、次回から顔認証で受付できます</p>
+      <div class="face-status" id="register-status">顔を検出中...</div>
+      <button class="btn-primary" id="btn-register-face" style="width:auto;padding:12px 36px;" onclick="captureAndRegister()" disabled>撮影して受付完了</button>
+      <button class="btn-secondary" style="margin-top:8px;padding:8px 20px;font-size:12px;" onclick="skipPhoto()">スキップ</button>
     </div>
   </div>
 </div>
@@ -976,8 +975,6 @@
   </div>
   <div style="text-align:center;">
     <div class="complete-card" id="complete-info"></div>
-    <button class="btn-primary" id="btn-offer-register" style="width:auto;padding:14px 32px;margin-bottom:12px;display:none;" onclick="offerFaceRegister(completedVisitor)">顔を登録して次回から簡単受付</button>
-    <br>
     <button class="btn-secondary" onclick="resetForm()">トップに戻る</button>
   </div>
 </div>
@@ -1078,29 +1075,35 @@
       status: 'waiting'
     };
 
+    // 撮影画面へ（写真撮影＋顔登録）
+    pendingVisitor = visitor;
+    startPhotoCapture();
+    return false;
+  }
+
+  let pendingVisitor = null;
+
+  // 写真なしで受付完了
+  function completeCheckin(visitor) {
     const visitors = getVisitors();
     visitors.unshift(visitor);
     saveVisitors(visitors);
 
-    showComplete(visitor);
-
     const API_BASE = window.API_BASE || '';
 
-    // サーバーに来客データを保存
     fetch(API_BASE + '/api/visitors', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(visitor)
     }).catch(err => console.error('データ保存エラー:', err));
 
-    // Teams通知を送信
     fetch(API_BASE + '/api/notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(visitor)
     }).catch(err => console.error('通知エラー:', err));
 
-    return false;
+    showComplete(visitor);
   }
 
   let completedVisitor = null;
@@ -1116,12 +1119,6 @@
       <div class="complete-card-row"><span class="complete-card-label">人数</span><span class="complete-card-value">${visitor.count}名</span></div>
       <div class="complete-card-row"><span class="complete-card-label">受付時刻</span><span class="complete-card-value">${formatTime(visitor.checkinTime)}</span></div>
     `;
-
-    // 顔未登録の場合のみ登録ボタンを表示
-    const faceDB = getFaceDB();
-    const alreadyRegistered = faceDB.some(e => e.name === visitor.name);
-    const registerBtn = document.getElementById('btn-offer-register');
-    registerBtn.style.display = alreadyRegistered ? 'none' : 'inline-block';
 
     goTo('complete');
   }
@@ -1416,23 +1413,24 @@
     lastCheckinVisitor = null;
   }
 
-  // === 顔登録 ===
+  // === 写真撮影 + 顔登録 ===
   let registerDescriptor = null;
 
-  // 通常チェックイン完了後に顔登録を提案
-  async function offerFaceRegister(visitor) {
-    lastCheckinVisitor = visitor;
-    goTo('face-register');
-    document.getElementById('register-status').textContent = 'モデルを読み込み中...';
+  async function startPhotoCapture() {
+    goTo('photo');
+    document.getElementById('register-status').textContent = 'カメラを起動中...';
     document.getElementById('btn-register-face').disabled = true;
+    document.getElementById('register-overlay').style.borderColor = '';
 
     try {
       await loadFaceModels();
       await startCamera('register-video');
-      document.getElementById('register-status').textContent = 'カメラに顔を向けてください';
+      document.getElementById('register-status').textContent = '顔を検出中...';
       startRegisterDetection();
     } catch (err) {
-      document.getElementById('register-status').textContent = 'カメラを起動できません';
+      // カメラ起動失敗時はスキップして受付完了
+      completeCheckin(pendingVisitor);
+      pendingVisitor = null;
     }
   }
 
@@ -1461,58 +1459,54 @@
         document.getElementById('register-overlay').style.borderColor = '#4caf50';
         document.getElementById('btn-register-face').disabled = false;
       } else {
-        document.getElementById('register-status').textContent = 'カメラに顔を向けてください';
+        document.getElementById('register-status').textContent = '顔を検出中...';
         document.getElementById('register-overlay').style.borderColor = '';
         document.getElementById('btn-register-face').disabled = true;
       }
     }, 500);
   }
 
-  function registerFace() {
-    if (!registerDescriptor || !lastCheckinVisitor) return;
+  // 撮影＋顔登録＋受付完了
+  function captureAndRegister() {
+    if (!pendingVisitor) return;
 
-    const faceDB = getFaceDB();
-    // 同じ名前の既存エントリを更新
-    const existing = faceDB.findIndex(e => e.name === lastCheckinVisitor.name);
-    const entry = {
-      name: lastCheckinVisitor.name,
-      company: lastCheckinVisitor.company,
-      target: lastCheckinVisitor.target,
-      descriptor: registerDescriptor
-    };
+    // 写真をcanvasから取得
+    const canvas = document.getElementById('register-canvas');
+    const photo = canvas.toDataURL('image/jpeg', 0.7);
+    pendingVisitor.photo = photo;
 
-    if (existing >= 0) {
-      faceDB[existing] = entry;
-    } else {
-      faceDB.push(entry);
+    // 顔データを登録
+    if (registerDescriptor) {
+      const faceDB = getFaceDB();
+      const entry = {
+        name: pendingVisitor.name,
+        company: pendingVisitor.company,
+        target: pendingVisitor.target,
+        descriptor: registerDescriptor
+      };
+      const existing = faceDB.findIndex(e => e.name === pendingVisitor.name);
+      if (existing >= 0) { faceDB[existing] = entry; } else { faceDB.push(entry); }
+      saveFaceDB(faceDB);
+
+      const API_BASE = window.API_BASE || '';
+      fetch(API_BASE + '/api/faces', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry)
+      }).catch(() => {});
     }
 
-    saveFaceDB(faceDB);
     stopCamera();
-
-    // サーバーにも保存
-    const API_BASE = window.API_BASE || '';
-    fetch(API_BASE + '/api/faces', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(entry)
-    }).catch(() => {});
-
-    document.getElementById('register-status').textContent = '登録完了！';
-    document.getElementById('btn-register-face').disabled = true;
-
-    setTimeout(() => {
-      showComplete(lastCheckinVisitor);
-      lastCheckinVisitor = null;
-      registerDescriptor = null;
-    }, 1500);
+    completeCheckin(pendingVisitor);
+    pendingVisitor = null;
+    registerDescriptor = null;
   }
 
-  function skipRegister() {
+  function skipPhoto() {
     stopCamera();
-    if (lastCheckinVisitor) {
-      showComplete(lastCheckinVisitor);
-      lastCheckinVisitor = null;
+    if (pendingVisitor) {
+      completeCheckin(pendingVisitor);
+      pendingVisitor = null;
     } else {
       goTo('menu');
     }
