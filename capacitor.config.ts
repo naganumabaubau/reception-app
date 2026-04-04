@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
     cleartext: true,
-    url: 'http://localhost:3000'
+    // url: 'http://localhost:3000' // ローカル開発時のみ有効にする
   },
   ios: {
     contentInset: 'automatic'
