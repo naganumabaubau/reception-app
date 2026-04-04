@@ -1258,10 +1258,16 @@
         return;
       }
 
+      // canvasに描画してから検出（iOS WebView対応）
+      const canvas = document.getElementById('face-canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+
       let detection;
       try {
         detection = await faceapi
-          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.3 }))
+          .detectSingleFace(canvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.2 }))
           .withFaceLandmarks()
           .withFaceDescriptor();
       } catch (err) {
@@ -1381,10 +1387,15 @@
     faceDetectInterval = setInterval(async () => {
       if (video.readyState < 2 || video.videoWidth === 0) return;
 
+      const canvas = document.getElementById('register-canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+
       let detection;
       try {
         detection = await faceapi
-          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.3 }))
+          .detectSingleFace(canvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.2 }))
           .withFaceLandmarks()
           .withFaceDescriptor();
       } catch (err) { return; }
