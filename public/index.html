@@ -180,27 +180,27 @@
       display: flex;
       justify-content: center;
       align-items: stretch;
-      gap: clamp(6px, 1.5vw, 20px);
-      padding: clamp(6px, 2vh, 16px) max(env(safe-area-inset-right, 0px), 4vw)
-               clamp(6px, 2vh, 16px) max(env(safe-area-inset-left, 0px), 4vw);
+      gap: clamp(8px, 2vw, 24px);
+      padding: clamp(8px, 3vh, 24px) max(env(safe-area-inset-right, 0px), 5vw)
+               clamp(8px, 3vh, 24px) max(env(safe-area-inset-left, 0px), 5vw);
       flex: 1;
       align-content: center;
-      flex-wrap: nowrap;
+      flex-wrap: wrap;
     }
 
     .menu-card {
       background: #fff;
-      border-radius: clamp(10px, 2vw, 20px);
-      padding: clamp(10px, 3vh, 28px) clamp(8px, 2vw, 20px);
+      border-radius: clamp(12px, 2vw, 20px);
+      padding: clamp(12px, 3vh, 32px) clamp(10px, 2vw, 24px);
       text-align: center;
       cursor: pointer;
       box-shadow: 0 2px 12px rgba(0,0,0,0.06);
       transition: transform 0.15s, box-shadow 0.15s;
       border: 2px solid transparent;
       -webkit-tap-highlight-color: transparent;
-      flex: 1;
-      min-width: 0;
-      max-width: 180px;
+      flex: 1 1 clamp(100px, 15vw, 200px);
+      min-width: clamp(80px, 12vw, 160px);
+      max-width: clamp(150px, 20vw, 280px);
       display: flex;
       flex-direction: column;
       align-items: center;
