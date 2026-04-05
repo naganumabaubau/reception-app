@@ -463,11 +463,94 @@
     }
 
     .toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ===== Login Screen ===== */
+    .login-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #f0f4f8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .login-overlay.hidden { display: none; }
+
+    .login-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 40px;
+      width: 360px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+
+    .login-card h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1a2233;
+      margin-bottom: 8px;
+    }
+
+    .login-card p {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 24px;
+    }
+
+    .login-input {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 15px;
+      border: 2px solid #e0e5eb;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      font-family: inherit;
+      text-align: center;
+    }
+
+    .login-input:focus { outline: none; border-color: #009bdb; }
+
+    .login-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      background: #009bdb;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .login-btn:hover { background: #0080b8; }
+
+    .login-error {
+      color: #e53935;
+      font-size: 13px;
+      margin-top: 12px;
+      min-height: 20px;
+    }
   </style>
 </head>
 <body>
 
-<div class="layout">
+<!-- Login Screen -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-card">
+    <h2>管理画面</h2>
+    <p>パスワードを入力してください</p>
+    <form onsubmit="return handleLogin(event)">
+      <input type="password" class="login-input" id="login-password" placeholder="パスワード" autofocus>
+      <button type="submit" class="login-btn">ログイン</button>
+    </form>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<div class="layout" id="main-layout" style="display:none;">
   <nav class="sidebar">
     <div class="sidebar-logo">
       <h1>受付システム</h1>
@@ -896,8 +979,60 @@
     }
   }, 10000);
 
+  // --- Auth ---
+  async function handleLogin(e) {
+    e.preventDefault();
+    const password = document.getElementById('login-password').value;
+    const errorEl = document.getElementById('login-error');
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        sessionStorage.setItem('admin_token', data.token);
+        document.getElementById('login-overlay').classList.add('hidden');
+        document.getElementById('main-layout').style.display = 'flex';
+        renderDashboard();
+      } else {
+        errorEl.textContent = 'パスワードが違います';
+        document.getElementById('login-password').value = '';
+      }
+    } catch (err) {
+      errorEl.textContent = '接続エラー';
+    }
+    return false;
+  }
+
+  async function checkAuth() {
+    const token = sessionStorage.getItem('admin_token');
+    if (token) {
+      try {
+        const res = await fetch('/api/auth/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+        const data = await res.json();
+        if (data.valid) {
+          document.getElementById('login-overlay').classList.add('hidden');
+          document.getElementById('main-layout').style.display = 'flex';
+          renderDashboard();
+          return;
+        }
+      } catch (e) {}
+    }
+    // 未認証：ログイン画面を表示
+    document.getElementById('login-overlay').classList.remove('hidden');
+    document.getElementById('main-layout').style.display = 'none';
+  }
+
   // --- Init ---
-  renderDashboard();
+  checkAuth();
 </script>
 
 </body>

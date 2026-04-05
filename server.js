@@ -23,8 +23,30 @@ function saveJSON(file, data) {
 
 let receptionSettings = loadJSON(SETTINGS_FILE, {});
 
+// 管理画面パスワード
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'acall7890';
+const adminTokens = new Set();
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// 管理画面認証API
+app.post('/api/auth/login', (req, res) => {
+  const { password } = req.body;
+  if (password === ADMIN_PASSWORD) {
+    const token = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    adminTokens.add(token);
+    console.log('🔑 管理画面ログイン成功');
+    res.json({ success: true, token });
+  } else {
+    res.status(401).json({ success: false, error: 'パスワードが違います' });
+  }
+});
+
+app.post('/api/auth/verify', (req, res) => {
+  const { token } = req.body;
+  res.json({ valid: adminTokens.has(token) });
+});
 
 // Teams通知エンドポイント（画像添付対応）
 app.post('/api/notify', async (req, res) => {
